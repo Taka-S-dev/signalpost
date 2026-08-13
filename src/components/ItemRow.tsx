@@ -40,6 +40,18 @@ export function ItemRow({
     kind === "commandPrefix" ? { kind, prefix } : ({ kind } as Scope);
 
   const project = item.label || item.project;
+  // "Every call of this tool" is the one choice here that cannot be read off
+  // the call in front of you, so it is warned about in stronger terms.
+  const broad = remember?.kind === "toolInProject";
+  const covered = !remember
+    ? ""
+    : remember.kind === "commandPrefix"
+      ? remember.prefix.trim()
+        ? t.actions.prefixMatches(remember.prefix.trim(), project)
+        : t.actions.prefixEmpty
+      : remember.kind === "exactCall"
+        ? t.actions.coversExact(project)
+        : t.actions.coversTool(item.toolName, project);
   // Anything the risk rules call dangerous is, by definition, the kind of
   // call you never want repeated without looking. Those cannot be turned
   // into a standing rule from here at all.
@@ -133,32 +145,33 @@ export function ItemRow({
                       {t.actions.scopeTool(item.toolName, project)}
                     </option>
                   </select>
+                  {/* Editable, and it has to be: the suggestion is three
+                      words off the front, which is wrong the moment a
+                      command opens with `cd <path>;`. */}
                   {remember.kind === "commandPrefix" && (
-                    <>
-                      {/* Editable, and it has to be: the suggestion is three
-                          words off the front, which is wrong the moment a
-                          command opens with `cd <path>;`. */}
-                      <input
-                        className="remember-prefix"
-                        value={remember.prefix}
-                        placeholder={t.actions.prefixPlaceholder}
-                        onChange={(e) => {
-                          setPrefix(e.target.value);
-                          onRemember({ kind: "commandPrefix", prefix: e.target.value });
-                        }}
-                        onKeyDown={(e) => e.stopPropagation()}
-                      />
-                      <p className="remember-note">
-                        {remember.prefix.trim()
-                          ? t.actions.prefixMatches(remember.prefix.trim(), project)
-                          : t.actions.prefixEmpty}
-                      </p>
-                    </>
+                    <input
+                      className="remember-prefix"
+                      value={remember.prefix}
+                      placeholder={t.actions.prefixPlaceholder}
+                      onChange={(e) => {
+                        setPrefix(e.target.value);
+                        onRemember({ kind: "commandPrefix", prefix: e.target.value });
+                      }}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
                   )}
-                  {/* Where to undo this belongs here, at the moment the rule
-                      is about to exist — not in a settings screen you would
-                      have to already know about to go looking. */}
-                  <p className="remember-note">{t.actions.rememberWhere}</p>
+                  {/* One block, in the order the question is actually asked:
+                      what this does to future calls, which calls, and how to
+                      take it back. Ticking the box was otherwise the only
+                      place in the app where something stops asking and
+                      nothing says so. */}
+                  <div className={`remember-warn ${broad ? "is-broad" : ""}`}>
+                    <p className="warn-lead">
+                      ⚠ {broad ? t.actions.warnBroad : t.actions.warnSilent}
+                    </p>
+                    <p>{covered}</p>
+                    <p className="warn-undo">{t.actions.rememberWhere}</p>
+                  </div>
                 </>
               )}
 

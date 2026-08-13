@@ -28,6 +28,14 @@ export const en = {
     deny: "Deny",
     rememberLabel: "Allow this without asking from now on",
     rememberBlocked: " — not offered for calls marked dangerous",
+    warnSilent:
+      "From now on, matching calls run without asking. They will not appear here and make no sound.",
+    warnBroad:
+      "From now on, every call of this tool runs without asking, whatever it contains. None will appear here or make a sound.",
+    coversExact: (project: string) =>
+      `Covers only a byte-identical call, in ${project} and below.`,
+    coversTool: (tool: string, project: string) =>
+      `Covers every ${tool} call in ${project} and below.`,
     rememberWhere: "Rules you create can be deleted any time under ⚑ Rules (R)",
     scopePrefix: "commands starting with… (recommended)",
     scopeCall: (project: string) => `only a byte-identical call, in ${project}`,

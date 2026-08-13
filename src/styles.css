@@ -856,6 +856,45 @@ h2.secondary {
   color: var(--text-dim);
 }
 
+/* Loud enough to stop the hand on its way to Y, quiet enough that it is not
+   mistaken for the call itself being dangerous. */
+.remember-warn {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  background: rgb(232 192 125 / 0.1);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.remember-warn p {
+  margin: 0;
+}
+
+.warn-lead {
+  color: var(--warn);
+}
+
+/* The way back out. Dimmer than the consequence above it, because it is only
+   worth reading once the consequence has landed. */
+.warn-undo {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* Every call of a tool, sight unseen, is the one option here that cannot be
+   checked against what is on screen. */
+.remember-warn.is-broad {
+  border-color: var(--danger);
+  background: rgb(242 112 127 / 0.1);
+}
+
+.remember-warn.is-broad .warn-lead {
+  color: var(--danger);
+}
+
 /* The answer itself: wide targets, full weight. */
 .actions.decide button {
   flex: 1;

@@ -25,6 +25,13 @@ export const ja: Dictionary = {
     deny: "拒否",
     rememberLabel: "次回から確認せずに許可する",
     rememberBlocked: "（危険と判定された操作では選べません）",
+    warnSilent: "以降、一致する呼び出しは確認なしで実行されます。受信箱にも音にも出ません。",
+    warnBroad:
+      "以降、このツールの呼び出しは中身を問わず、すべて確認なしで実行されます。受信箱にも音にも出ません。",
+    coversExact: (project: string) =>
+      `対象は ${project}（サブフォルダ含む）で、この呼び出しと完全に同じものだけです。`,
+    coversTool: (tool: string, project: string) =>
+      `対象は ${project}（サブフォルダ含む）の ${tool} すべてです。`,
     rememberWhere: "作ったルールは ⚑ ルール の画面（R キー）でいつでも削除できます",
     scopePrefix: "先頭が一致するコマンド（推奨）",
     scopeCall: (project: string) => `完全に同じ呼び出しだけ / ${project} のみ`,
