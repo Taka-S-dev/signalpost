@@ -80,6 +80,8 @@ export const ja: Dictionary = {
     popupPermission: "承認待ちのみ",
     popupAll: "すべて",
     popupNever: "出さない",
+    keepOpen: "リストを開いたままにする",
+    keepOpenHint: "0 件になってもバーに畳まず、一覧のまま置いておく",
     hoverExpand: "ホバーで開く",
     hoverExpandHint: "乗せると覗ける。離れると畳む。クリックすれば開いたまま",
     toast: "残りは通知で知らせる",

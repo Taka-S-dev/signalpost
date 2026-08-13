@@ -82,6 +82,8 @@ export const en = {
     popupPermission: "Approvals only",
     popupAll: "Anything",
     popupNever: "Never",
+    keepOpen: "Keep the list open",
+    keepOpenHint: "The panel stays as a list instead of collapsing to the bar when the queue empties",
     hoverExpand: "Open the bar on hover",
     hoverExpandHint: "Point at it to peek, move away to collapse. Clicking keeps it open.",
     toast: "System notification for the rest",

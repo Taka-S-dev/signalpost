@@ -58,6 +58,7 @@ export interface Settings {
   popup: PopupWhen;
   toast: boolean;
   hoverExpand: boolean;
+  keepOpen: boolean;
   shortcut: string;
 }
 
@@ -85,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   popup: "permission",
   toast: true,
   hoverExpand: true,
+  keepOpen: false,
   shortcut: "Alt+Space",
 };
 

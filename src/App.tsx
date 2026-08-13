@@ -231,11 +231,13 @@ export default function App() {
     previousCount.current = items.length;
 
     if (!drained || mode !== "full" || view !== "inbox") return;
-    if (settings.autoHide) return;
+    // Keeping the list up is a choice about how the app sits on the desktop,
+    // so nothing the queue does may override it.
+    if (settings.autoHide || settings.keepOpen) return;
     // Long enough for the "cleared" flash to register first.
     const timer = setTimeout(() => void api.collapsePanel(), 900);
     return () => clearTimeout(timer);
-  }, [items.length, mode, view, settings.autoHide]);
+  }, [items.length, mode, view, settings.autoHide, settings.keepOpen]);
 
   // Only the background layers take the alpha; text and borders stay opaque
   // so a translucent panel is still readable over busy windows.

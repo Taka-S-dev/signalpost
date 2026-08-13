@@ -122,7 +122,10 @@ fn hide_panel(state: Shared) {
 /// events, which cannot tell a tooltip apart from a real departure.
 #[tauri::command]
 fn expand_panel(state: Shared, peek: Option<bool>) {
-    let peek = peek.unwrap_or(false);
+    // "Keep the list open" has to win over every automatic collapse, not just
+    // the one that fires when the queue drains. Opening by hover would
+    // otherwise still arm the watcher and close it on the way out.
+    let peek = peek.unwrap_or(false) && !state.settings().keep_open;
     state.set_peeking(peek);
     ui::reveal(state.app());
     if peek {
@@ -431,6 +434,11 @@ pub fn run() {
 
             if let Some(window) = ui::panel(&handle) {
                 ui::place(&handle, &window);
+            }
+            // Asking for the list to stay open means it should be open now,
+            // not from the next arrival onwards.
+            if shared.settings().keep_open {
+                ui::expand(&handle);
             }
 
             tauri::async_runtime::spawn(async move {

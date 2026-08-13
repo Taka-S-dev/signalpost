@@ -265,7 +265,7 @@ pub fn sync(app: &AppHandle, items: &[Item], arrived: Option<ItemKind>) {
         // Collapsing when the queue empties is the frontend's call: only it
         // knows whether the user is looking at the inbox or is halfway
         // through the settings.
-        if settings.auto_hide {
+        if settings.auto_hide && !settings.keep_open {
             let _ = window.hide();
         }
     } else if worth_interrupting && !snoozed {

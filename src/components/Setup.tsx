@@ -195,6 +195,12 @@ export function Setup({ installed, live, port, settings, onSettings, onChanged, 
       </label>
 
       <Toggle
+        label={t.setup.keepOpen}
+        hint={t.setup.keepOpenHint}
+        checked={settings.keepOpen}
+        onChange={(keepOpen) => onSettings({ ...settings, keepOpen })}
+      />
+      <Toggle
         label={t.setup.hoverExpand}
         hint={t.setup.hoverExpandHint}
         checked={settings.hoverExpand}

@@ -34,6 +34,10 @@ pub struct Settings {
     /// Expand the bar by pointing at it, and collapse again on the way out.
     #[serde(default = "yes")]
     pub hover_expand: bool,
+    /// Keep the full list on screen instead of letting it collapse to the
+    /// bar when the queue empties.
+    #[serde(default)]
+    pub keep_open: bool,
     /// Global shortcut that shows the panel, e.g. `Alt+Space`.
     #[serde(default = "default_shortcut")]
     pub shortcut: String,
@@ -95,6 +99,7 @@ impl Default for Settings {
             popup: PopupWhen::Permission,
             toast: true,
             hover_expand: true,
+            keep_open: false,
             shortcut: DEFAULT_SHORTCUT.to_string(),
         }
     }
