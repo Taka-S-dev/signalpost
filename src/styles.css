@@ -917,6 +917,24 @@ kbd {
   color: var(--ok);
 }
 
+/* Reads as a line of text until pointed at, because it is a footnote about
+   a quiet inbox, not something asking to be dealt with. */
+.empty-rules {
+  margin-top: 12px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.empty-rules:hover {
+  border-color: var(--line);
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
 /* Settings controls -------------------------------------------------------- */
 
 .toggle,

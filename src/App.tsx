@@ -89,6 +89,14 @@ export default function App() {
   // the row is answered, so the choice can never leak onto the next call.
   const [remember, setRemember] = useState<{ id: string; scope: Scope } | null>(null);
   const [undo, setUndo] = useState<string | null>(null);
+  // Re-read on every snapshot: a call approved by a rule never appears in
+  // the queue, so an arrival is the only hint that the tally may have moved.
+  const [autoAllowed, setAutoAllowed] = useState(0);
+  useEffect(() => {
+    void api
+      .listRules()
+      .then((rules) => setAutoAllowed(rules.reduce((sum, rule) => sum + rule.hits, 0)));
+  }, [items]);
 
   const resolve = useCallback(
     (decision: Decision, scope?: Scope) => {
@@ -386,6 +394,14 @@ export default function App() {
             <p className="empty-mark">✓</p>
             <p>{t.empty.title}</p>
             <p className="note">{t.empty.hint}</p>
+            {/* An empty inbox has two causes that look identical: nothing
+                asked, or a rule answered it silently. Saying which, here,
+                is the only place the second one is ever visible. */}
+            {autoAllowed > 0 && (
+              <button className="empty-rules" onClick={() => setView("rules")}>
+                {t.empty.autoAllowed(autoAllowed)}
+              </button>
+            )}
           </div>
         ) : (
           <ul className="list">

@@ -40,6 +40,7 @@ export const en = {
   empty: {
     title: "All clear.",
     hint: "Approvals will queue up here.",
+    autoAllowed: (n: number) => `${n} approved by rules, without asking →`,
   },
   hints: {
     show: "show",

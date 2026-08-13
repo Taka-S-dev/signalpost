@@ -37,6 +37,7 @@ export const ja: Dictionary = {
   empty: {
     title: "すべて処理済みです。",
     hint: "承認待ちが出たらここに並びます。",
+    autoAllowed: (n: number) => `ルールにより ${n} 件を確認なしで許可済み →`,
   },
   hints: {
     show: "表示",
