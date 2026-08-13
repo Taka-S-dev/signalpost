@@ -10,15 +10,20 @@ use crate::model::{now_ms, project_name};
 
 /// Distinguishable at a glance on the dark panel, and still distinct for the
 /// most common forms of colour blindness.
+///
+/// Muted on purpose. A project's colour only has to say *which* session a row
+/// belongs to; at the saturation these were, a stripe naming a project pulled
+/// harder than the amber that means something is waiting. None of these may
+/// be mistaken for that amber, the red, or the green.
 const PALETTE: [&str; 8] = [
-    "#7aa2f7", // blue
-    "#7dcfa0", // green
-    "#e8c07d", // amber
-    "#f2707f", // red
-    "#bb9af7", // purple
-    "#7dcfff", // cyan
-    "#d9a066", // orange
-    "#9ece6a", // lime
+    "#8ea3c4", // slate
+    "#8fb392", // sage
+    "#c9ad72", // sand
+    "#c68d8d", // clay
+    "#a798c4", // lilac
+    "#79a8ad", // teal
+    "#c4926a", // ochre
+    "#a8b06e", // olive
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

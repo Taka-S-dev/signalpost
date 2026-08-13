@@ -4,22 +4,31 @@
   /* Backgrounds carry the user's opacity; everything else stays solid so a
      translucent panel is still legible over whatever is behind it. */
   --alpha: 1;
-  --bg: rgb(20 22 26 / var(--alpha));
-  --bg-raised: rgb(27 30 36 / var(--alpha));
-  --bg-selected: rgb(35 40 51 / var(--alpha));
-  --bg-sunken: rgb(15 17 20 / var(--alpha));
+  /* Neutral grey, not blue-grey. The tint was doing no work and put a hue
+     on every surface, which is most of why the panel read as coloured
+     before any of the meaningful colours were drawn on it. */
+  --bg: rgb(24 24 25 / var(--alpha));
+  --bg-raised: rgb(31 31 33 / var(--alpha));
+  --bg-selected: rgb(43 43 46 / var(--alpha));
+  --bg-sunken: rgb(18 18 19 / var(--alpha));
   /* Two weights, because a line that separates and a line that outlines a
      control have different jobs. The divider may be faint; the outline is
      the only thing saying "this is a button", and at 1.4:1 against the
      panel it was not saying it. --line-edge clears 3:1. */
-  --line: #2c313b;
-  --line-edge: #5a6376;
-  --text: #e6e9ef;
-  --text-dim: #9aa3b2;
-  --accent: #7aa2f7;
-  --ok: #7dcfa0;
-  --danger: #f2707f;
-  --warn: #e8c07d;
+  --line: #333338;
+  --line-edge: #737380;
+  --text: #e9e9ea;
+  --text-dim: #9d9da4;
+  /* Selection and focus are states, not meanings, so they are brightness
+     rather than hue. The blue they used to be was the loudest colour on
+     screen and pointed at nothing that needed doing. */
+  --accent: #e9e9ea;
+  /* The only three colours that mean something. Deeper and less saturated
+     than before: at full saturation everything shouted equally, so nothing
+     did. --warn is the one the eye should find first. */
+  --warn: #dda13f;
+  --danger: #e07575;
+  --ok: #63b083;
 
   /* Type, space and radius are scales, not free numbers. Ten font sizes and
      eight corner radii had accumulated one component at a time, which is
@@ -159,8 +168,8 @@ body {
   }
   12%,
   45% {
-    background: rgb(232 192 125 / 0.3);
-    box-shadow: 0 0 0 2px var(--warn), 0 0 22px rgb(232 192 125 / 0.55);
+    background: rgb(221 161 63 / 0.3);
+    box-shadow: 0 0 0 2px var(--warn), 0 0 22px rgb(221 161 63 / 0.55);
   }
 }
 
@@ -171,8 +180,8 @@ body {
     box-shadow: none;
   }
   25% {
-    background: rgb(125 207 160 / 0.26);
-    box-shadow: 0 0 0 2px var(--ok), 0 0 20px rgb(125 207 160 / 0.5);
+    background: rgb(99 176 131 / 0.26);
+    box-shadow: 0 0 0 2px var(--ok), 0 0 20px rgb(99 176 131 / 0.5);
   }
 }
 
@@ -245,7 +254,7 @@ body {
     background: transparent;
   }
   50% {
-    background: rgb(232 192 125 / 0.18);
+    background: rgb(221 161 63 / 0.18);
   }
 }
 
@@ -420,8 +429,8 @@ body {
 .row.kind-permission {
   background:
     linear-gradient(
-      rgb(232 192 125 / calc(var(--heat, 0) * 0.14)),
-      rgb(232 192 125 / calc(var(--heat, 0) * 0.14))
+      rgb(221 161 63 / calc(var(--heat, 0) * 0.14)),
+      rgb(221 161 63 / calc(var(--heat, 0) * 0.14))
     ),
     var(--bg-raised);
 }
@@ -436,10 +445,10 @@ body {
 @keyframes waiting {
   0%,
   100% {
-    box-shadow: inset 0 0 0 1px rgb(232 192 125 / 0);
+    box-shadow: inset 0 0 0 1px rgb(221 161 63 / 0);
   }
   50% {
-    box-shadow: inset 0 0 0 1px rgb(232 192 125 / 0.55);
+    box-shadow: inset 0 0 0 1px rgb(221 161 63 / 0.55);
   }
 }
 
@@ -770,22 +779,22 @@ h2.secondary {
 }
 
 .risk-danger .risk {
-  background: rgb(242 112 127 / 0.16);
+  background: rgb(224 117 117 / 0.16);
   color: var(--danger);
 }
 
 .risk-caution .risk {
-  background: rgb(232 192 125 / 0.16);
+  background: rgb(221 161 63 / 0.16);
   color: var(--warn);
 }
 
 /* A tint rather than a border: the left edge already means "which project". */
 .row.risk-danger {
-  background: rgb(242 112 127 / 0.07);
+  background: rgb(224 117 117 / 0.07);
 }
 
 .row.risk-danger.is-selected {
-  background: rgb(242 112 127 / 0.13);
+  background: rgb(224 117 117 / 0.13);
 }
 
 .detail .line {
@@ -794,12 +803,12 @@ h2.secondary {
 
 .detail .line.del {
   color: var(--danger);
-  background: rgb(242 112 127 / 0.08);
+  background: rgb(224 117 117 / 0.08);
 }
 
 .detail .line.add {
   color: var(--ok);
-  background: rgb(125 207 160 / 0.08);
+  background: rgb(99 176 131 / 0.08);
 }
 
 .detail {
@@ -896,7 +905,7 @@ h2.secondary {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--warn);
   border-radius: var(--radius-sm);
-  background: rgb(232 192 125 / 0.1);
+  background: rgb(221 161 63 / 0.1);
   font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--text-dim);
@@ -921,7 +930,7 @@ h2.secondary {
    checked against what is on screen. */
 .remember-warn.is-broad {
   border-color: var(--danger);
-  background: rgb(242 112 127 / 0.1);
+  background: rgb(224 117 117 / 0.1);
 }
 
 .remember-warn.is-broad .warn-lead {
@@ -1290,7 +1299,7 @@ h2 {
   margin: 0;
   padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--warn);
-  background: rgb(232 192 125 / 0.12);
+  background: rgb(221 161 63 / 0.12);
   font-size: var(--text-sm);
   color: var(--warn);
 }
@@ -1303,7 +1312,7 @@ h2 {
   margin: 0;
   padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--danger);
-  background: rgb(242 112 127 / 0.12);
+  background: rgb(224 117 117 / 0.12);
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: var(--text-sm);
   color: var(--danger);

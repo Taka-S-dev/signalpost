@@ -59,6 +59,10 @@ export function ItemRow({
   // How long this has been waiting, expressed as something the eye can read
   // without parsing a number. Only blocked calls age: nothing is waiting on a
   // finished turn.
+  // A finished turn wears no colour. It kept the project's stripe, so a row
+  // that wanted nothing sat in the list as brightly as one holding a session
+  // up — the same colour saying "which project this is" and "look at me".
+  const stripe = item.kind === "completed" ? "var(--line)" : item.color;
   const waited = permission ? Date.now() - item.createdAt : 0;
   const heat = Math.min(waited / (10 * 60_000), 1);
   const stale = waited > 3 * 60_000;
@@ -73,12 +77,12 @@ export function ItemRow({
       className={`row ${selected ? "is-selected" : ""} kind-${item.kind} ${
         item.risk ? `risk-${item.risk.level}` : ""
       } ${stale ? "is-stale" : ""}`}
-      style={{ borderLeftColor: item.color, "--heat": heat } as React.CSSProperties}
+      style={{ borderLeftColor: stripe, "--heat": heat } as React.CSSProperties}
       onClick={onSelect}
       aria-current={selected}
     >
       <div className="row-head">
-        <span className="project" style={{ color: item.color }}>
+        <span className="project" style={{ color: stripe }}>
           {item.label || item.project}
         </span>
         {/* Only Claude rows can be answered here, so the source has to be
