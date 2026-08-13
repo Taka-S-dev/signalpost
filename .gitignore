@@ -1,24 +1,69 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Deny everything, then allow the paths the project is made of, so a file
+# nobody thought about is untracked by default rather than committed by
+# default.
+#
+# Allowing by *extension* instead would not work: the repository needs
+# *.json, *.toml and *.md, which is exactly what a secrets.json or a
+# credentials.toml is wearing. Only paths separate them.
+*
+# Directories must be re-opened at every level or nothing below them can
+# match the rules further down.
+!*/
 
-node_modules
-dist
-dist-ssr
-*.local
 
-# Editor directories and files
-.vscode/*
+# Root files, named individually. Anything new at the root has to be
+# added here on purpose, which is the point.
+!.gitignore
+!LICENSE
+!README.md
+!README.ja.md
+!index.html
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.node.json
+!vite.config.ts
+
+# Source trees
+!src/**
+!src-tauri/src/**
+!src-tauri/icons/**
+!src-tauri/capabilities/**
+!src-tauri/build.rs
+!src-tauri/Cargo.toml
+!src-tauri/Cargo.lock
+!src-tauri/tauri.conf.json
+!src-tauri/.gitignore
+!docs/**
+!public/**
 !.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
+# Build output and dependencies, wherever they land
+node_modules/
+dist/
+target/
+gen/schemas/
+
+# Denied again, after the allows, because a source tree has to be open at
+# the directory level and a secret dropped inside one is still a secret.
+# The last matching rule wins, so these must stay at the bottom.
+**/.env
+**/.env.*
+# Whole filenames, not word fragments. `*secret*` would also swallow a
+# source file called useSecretsPanel.ts or SecretsView.tsx, and a source
+# file silently going untracked is the worse failure of the two.
+**/secret
+**/secrets
+**/secret.*
+**/secrets.*
+**/credential
+**/credentials
+**/credential.*
+**/credentials.*
+**/service-account*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/*.local.*
