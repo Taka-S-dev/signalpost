@@ -928,6 +928,33 @@ h2 {
   font-size: 14px;
 }
 
+/* The settings screen is one long scroll of unrelated groups. Without a
+   visible break between them the headings read as more body text and the
+   whole thing runs together. */
+.setup h2:not(:first-child),
+.rules h2:not(:first-child) {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* Status lines and outcomes are answers, not prose. */
+.setup .status {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.setup > button,
+.setup .actions {
+  margin-top: 10px;
+}
+
+/* A path in an error has to be readable and selectable, not wrapped mid-word
+   as if it were a sentence. */
+.setup .note:last-child {
+  margin-bottom: 4px;
+}
+
 .note {
   margin: 8px 0;
   font-size: 12px;
