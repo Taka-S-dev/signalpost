@@ -302,6 +302,33 @@ rather than left pointing at a binary that is gone.
 
 ---
 
+## 9b. What the tests reach, and what they do not
+
+Weighted towards the parts where being wrong is expensive rather than towards
+a coverage number. `rules.rs` carries the most of any module because a
+mistake there approves a call nobody looked at.
+
+Covered: the verdict shape, the token guard, rule scoping and matching, the
+danger invariant, risk marking, project colours, both installers, the Codex
+shim's argument parsing, geometry sanity, session state.
+
+**Not covered: the parked request itself.** `AppState` holds a
+`tauri::AppHandle` tied to the concrete runtime, so the mock runtime cannot
+build one, and the handler that parks a response cannot be driven in-process.
+What is tested instead is everything that path is made of — the verdict it
+returns, the guard in front of it — while the parking, the disconnect
+retirement and the settle hooks are measured against a running build (§2).
+
+That is a real gap and the honest fix is to make `AppState` generic over the
+runtime, which reaches ui.rs and lib.rs as well. Until then the measurements
+in §2 are the evidence, and they are dated for that reason.
+
+Also uncovered: `ui.rs` (window placement, largely Win32 and DPI behaviour
+that a test would only restate) and the frontend, which has no test runner —
+`tsc` is the only thing holding it.
+
+---
+
 ## 10. Open
 
 - The lingering row after an editor approval (§2). Nothing to do until Claude

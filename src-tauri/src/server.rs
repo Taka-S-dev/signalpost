@@ -381,3 +381,116 @@ async fn session_end(
     state.end_session(&payload.session_id);
     Json(json!({}))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::Request as HttpRequest;
+    use http_body_util::BodyExt;
+    use tower::ServiceExt;
+
+    /// Only what the parked path is *made of* is covered here. Driving the
+    /// real router needs an `AppState`, which holds a `tauri::AppHandle` tied
+    /// to the concrete runtime, so the mock runtime cannot build one. The
+    /// end-to-end behaviour is measured against a running build instead, and
+    /// what those runs showed is recorded in docs/DESIGN.md.
+    fn guarded_router() -> Router {
+        Router::new()
+            .route("/hook/{token}/permission", post(|| async { "reached" }))
+            .route(
+                "/hook/{token}/notification",
+                // Takes JSON exactly as the real handlers do, so the
+                // content-type behaviour under test is the same one.
+                post(|Json(_): Json<Value>| async { "reached" }),
+            )
+            .layer(middleware::from_fn(guard))
+    }
+
+    async fn body_of(response: Response) -> String {
+        let bytes = response.into_body().collect().await.unwrap().to_bytes();
+        String::from_utf8_lossy(&bytes).to_string()
+    }
+
+    fn post_json(uri: &str, content_type: &str) -> HttpRequest<Body> {
+        HttpRequest::builder()
+            .method("POST")
+            .uri(uri)
+            .header("content-type", content_type)
+            .body(Body::from("{}"))
+            .unwrap()
+    }
+
+    /// The one shape Claude Code actually reads. A top-level `decision`
+    /// string, or `reason` instead of `message`, is ignored in silence — the
+    /// failure this whole app was mistaken for on the first working build.
+    #[test]
+    fn an_allow_verdict_carries_an_object_with_a_behavior_field() {
+        let Json(body) = verdict("allow", None);
+        assert_eq!(
+            body["hookSpecificOutput"]["hookEventName"],
+            "PermissionRequest"
+        );
+        assert_eq!(body["hookSpecificOutput"]["decision"]["behavior"], "allow");
+        assert!(body["hookSpecificOutput"]["decision"].is_object());
+    }
+
+    #[test]
+    fn a_denial_puts_its_text_in_message_not_reason() {
+        let Json(body) = verdict("deny", Some("Denied in Signalpost"));
+        let decision = &body["hookSpecificOutput"]["decision"];
+        assert_eq!(decision["behavior"], "deny");
+        assert_eq!(decision["message"], "Denied in Signalpost");
+        assert!(decision.get("reason").is_none());
+    }
+
+    #[tokio::test]
+    async fn a_hook_url_carrying_the_token_reaches_its_handler() {
+        let response = guarded_router()
+            .oneshot(post_json(
+                &format!("/hook/{}/permission", crate::token::current()),
+                "application/json",
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_of(response).await, "reached");
+    }
+
+    #[tokio::test]
+    async fn a_hook_url_without_the_token_is_refused() {
+        for uri in [
+            "/hook/permission",
+            "/hook//permission",
+            "/hook/00000000000000000000000000000000/permission",
+            "/hook/x/permission",
+        ] {
+            let response = guarded_router()
+                .oneshot(post_json(uri, "application/json"))
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::NOT_FOUND,
+                "{uri} should have been refused"
+            );
+        }
+    }
+
+    /// What keeps a web page out. `application/json` is not a CORS-simple
+    /// content type, so a browser has to preflight and nothing here answers
+    /// one; a request that skips the preflight by sending `text/plain` is
+    /// refused. Switching to a lenient extractor would open that door again,
+    /// which is what this test is here to catch.
+    #[tokio::test]
+    async fn a_body_that_is_not_json_is_refused_even_with_the_token() {
+        let response = guarded_router()
+            .oneshot(post_json(
+                &format!("/hook/{}/notification", crate::token::current()),
+                "text/plain",
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+    }
+}

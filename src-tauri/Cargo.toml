@@ -29,6 +29,13 @@ path = "src/bin/codex_notify.rs"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[dev-dependencies]
+# Drives the real router in-process, so the endpoint tests exercise the same
+# routes and middleware the app serves rather than a copy of them.
+tauri = { version = "2", features = ["test"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 serde = { version = "1", features = ["derive"] }
