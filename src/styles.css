@@ -633,6 +633,17 @@ h2.secondary {
   color: var(--text-dim);
 }
 
+/* Repeats collapse into the one row, so the count is what says it happened
+   again. */
+.repeat {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
 .elapsed {
   margin-left: auto;
   font-variant-numeric: tabular-nums;

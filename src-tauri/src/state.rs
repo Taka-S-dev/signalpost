@@ -38,9 +38,6 @@ pub struct ResolveOutcome {
     pub rule_label: Option<String>,
 }
 
-/// How many finished turns to keep per session before dropping the oldest.
-const COMPLETED_PER_SESSION: usize = 5;
-
 /// Matches `minWidth`/`minHeight` in tauri.conf.json.
 const MIN_WIDTH: f64 = 320.0;
 const MIN_HEIGHT: f64 = 260.0;
@@ -495,26 +492,22 @@ impl AppState {
         if item.kind != ItemKind::Completed {
             self.clear_completed_for(&item.session_id);
         }
+        let mut item = item;
         {
             let mut inner = self.inner.lock().unwrap();
-            if item.kind != ItemKind::Completed {
-                inner
-                    .items
-                    .retain(|i| !(i.session_id == item.session_id && i.kind == item.kind));
-            }
-            inner.items.push(item.clone());
 
-            // A runaway session still must not be able to fill the panel.
-            let completed: Vec<String> = inner
+            // One row per session per kind, always. Three finished turns are
+            // three events, but showing them as three rows buries the other
+            // sessions — so the row is replaced and counts instead.
+            let previous = inner
                 .items
                 .iter()
-                .filter(|i| i.kind == ItemKind::Completed && i.session_id == item.session_id)
-                .map(|i| i.id.clone())
-                .collect();
-            if completed.len() > COMPLETED_PER_SESSION {
-                let stale = &completed[..completed.len() - COMPLETED_PER_SESSION];
-                inner.items.retain(|i| !stale.contains(&i.id));
+                .position(|i| i.session_id == item.session_id && i.kind == item.kind);
+            if let Some(index) = previous {
+                item.repeat = inner.items[index].repeat + 1;
+                inner.items.remove(index);
             }
+            inner.items.push(item.clone());
         }
         let state = match item.kind {
             ItemKind::Completed => SessionState::Idle,

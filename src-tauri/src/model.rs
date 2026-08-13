@@ -50,6 +50,9 @@ pub struct Item {
     pub signature: String,
     /// Set when a risk rule matched, so the row can be made to stand out.
     pub risk: Option<crate::risk::RiskMark>,
+    /// How many times this has happened for the session. Repeats replace the
+    /// row rather than adding one, so a chatty session stays one line.
+    pub repeat: u32,
     /// Epoch milliseconds, so the UI can render elapsed time.
     pub created_at: u64,
 }

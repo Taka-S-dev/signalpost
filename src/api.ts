@@ -20,6 +20,8 @@ export interface Item {
   detail: string | null;
   detailKind: "text" | "diff";
   risk: RiskMark | null;
+  /** How many times this happened for the session; repeats replace the row. */
+  repeat: number;
   signature: string;
   createdAt: number;
 }

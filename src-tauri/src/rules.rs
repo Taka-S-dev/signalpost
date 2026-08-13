@@ -175,6 +175,7 @@ mod tests {
             detail: None,
             detail_kind: "text".into(),
             risk: None,
+            repeat: 1,
             signature: sig.into(),
             created_at: 0,
         }
