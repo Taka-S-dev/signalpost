@@ -1,4 +1,5 @@
-import { type Item, type Decision, type Scope } from "../api";
+import { useEffect, useState } from "react";
+import { api, type Item, type Decision, type Scope, type ScopeKind } from "../api";
 import { useT } from "../i18n";
 import { elapsed } from "../useInbox";
 import { Detail } from "./Detail";
@@ -26,6 +27,18 @@ export function ItemRow({
 }: Props) {
   const t = useT();
   const permission = item.kind === "permission";
+  // Derived in Rust so the suggestion and the matching it feeds stay one
+  // implementation. Held here so switching scopes back and forth does not
+  // discard what the user typed in between.
+  const [prefix, setPrefix] = useState("");
+  useEffect(() => {
+    if (!permission) return;
+    void api.suggestPrefix(item.signature).then(setPrefix);
+  }, [item.signature, permission]);
+
+  const scopeOf = (kind: ScopeKind): Scope =>
+    kind === "commandPrefix" ? { kind, prefix } : ({ kind } as Scope);
+
   const project = item.label || item.project;
   // Anything the risk rules call dangerous is, by definition, the kind of
   // call you never want repeated without looking. Those cannot be turned
@@ -95,7 +108,9 @@ export function ItemRow({
                   type="checkbox"
                   checked={remember !== null}
                   disabled={dangerous}
-                  onChange={(e) => onRemember(e.target.checked ? "exactCall" : null)}
+                  onChange={(e) =>
+                    onRemember(e.target.checked ? { kind: "commandPrefix", prefix } : null)
+                  }
                 />
                 <span>
                   {t.actions.rememberLabel}
@@ -106,14 +121,40 @@ export function ItemRow({
                 <>
                   <select
                     className="remember-scope"
-                    value={remember}
-                    onChange={(e) => onRemember(e.target.value as Scope)}
+                    value={remember.kind}
+                    onChange={(e) => onRemember(scopeOf(e.target.value as ScopeKind))}
                   >
+                    {/* First, because it is the only one that both survives a
+                        changed command and stays narrower than the whole
+                        project. */}
+                    <option value="commandPrefix">{t.actions.scopePrefix}</option>
                     <option value="exactCall">{t.actions.scopeCall(project)}</option>
                     <option value="toolInProject">
                       {t.actions.scopeTool(item.toolName, project)}
                     </option>
                   </select>
+                  {remember.kind === "commandPrefix" && (
+                    <>
+                      {/* Editable, and it has to be: the suggestion is three
+                          words off the front, which is wrong the moment a
+                          command opens with `cd <path>;`. */}
+                      <input
+                        className="remember-prefix"
+                        value={remember.prefix}
+                        placeholder={t.actions.prefixPlaceholder}
+                        onChange={(e) => {
+                          setPrefix(e.target.value);
+                          onRemember({ kind: "commandPrefix", prefix: e.target.value });
+                        }}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                      <p className="remember-note">
+                        {remember.prefix.trim()
+                          ? t.actions.prefixMatches(remember.prefix.trim(), project)
+                          : t.actions.prefixEmpty}
+                      </p>
+                    </>
+                  )}
                   {/* Where to undo this belongs here, at the moment the rule
                       is about to exist — not in a settings screen you would
                       have to already know about to go looking. */}

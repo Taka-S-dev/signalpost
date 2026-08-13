@@ -2,7 +2,14 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type ItemKind = "permission" | "needsInput" | "completed";
 export type Decision = "allow" | "deny";
-export type Scope = "exactCall" | "toolInProject" | "toolEverywhere";
+/** Which calls a standing rule should cover. Mirrors the Rust enum. */
+export type Scope =
+  | { kind: "exactCall" }
+  | { kind: "commandPrefix"; prefix: string }
+  | { kind: "toolInProject" }
+  | { kind: "toolEverywhere" };
+
+export type ScopeKind = Scope["kind"];
 
 export type Agent = "claude" | "codex";
 
@@ -104,6 +111,8 @@ export interface TrayStrings {
 export interface RuleView {
   toolName: string;
   signature: string | null;
+  /** Set when the rule matches by the command's opening words. */
+  prefix: string | null;
   project: string | null;
   /** Calls this rule has approved without asking. */
   hits: number;
@@ -162,6 +171,7 @@ export const api = {
   resolve: (id: string, decision: Decision, remember?: Scope) =>
     invoke<ResolveOutcome>("resolve", { id, decision, remember: remember ?? null }),
   undoLastRule: () => invoke<RuleView[]>("undo_last_rule"),
+  suggestPrefix: (signature: string) => invoke<string>("suggest_prefix", { signature }),
   dismiss: (id: string) => invoke<void>("dismiss", { id }),
   dismissAll: () => invoke<number>("dismiss_all"),
   focusEditor: (id: string) => invoke<void>("focus_editor", { id }),

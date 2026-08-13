@@ -51,7 +51,12 @@ export function RulesView() {
   /// Rules read differently per language, so the sentence is built here from
   /// the parts rather than shipped as prose from Rust.
   const describe = (rule: RuleView) => {
-    const what = rule.signature ?? t.rules.everyCall(rule.toolName);
+    // A prefix rule stores no signature, so without its own branch it would
+    // be described as covering every call of the tool — far wider than it
+    // does, on the one screen where that has to be exact.
+    const what = rule.prefix
+      ? t.rules.startingWith(rule.prefix)
+      : (rule.signature ?? t.rules.everyCall(rule.toolName));
     return `${what} — ${rule.project ?? t.rules.everywhere}`;
   };
 

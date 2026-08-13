@@ -815,6 +815,20 @@ h2.secondary {
   font-size: 11.5px;
 }
 
+/* Monospace and full width: what goes in here is compared against a command
+   character by character, so it has to be read that way. */
+.remember-prefix {
+  width: 100%;
+  margin-top: 5px;
+  padding: 4px 6px;
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11.5px;
+}
+
 /* Quiet: it is reassurance, not part of the decision. */
 .remember-note {
   margin: 4px 0 0;

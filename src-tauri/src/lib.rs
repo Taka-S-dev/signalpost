@@ -44,6 +44,15 @@ fn resolve(
     state.resolve(&id, decision, remember)
 }
 
+/// What to prefill the "commands starting with" box with.
+///
+/// Derived here rather than in the UI so the suggestion and the matching it
+/// feeds can never drift apart.
+#[tauri::command]
+fn suggest_prefix(signature: String) -> String {
+    rules::suggested_prefix(&signature)
+}
+
 /// Takes back the standing rule the last answer created.
 #[tauri::command]
 fn undo_last_rule(state: Shared) -> Vec<RuleView> {
@@ -391,6 +400,7 @@ pub fn run() {
             list_rules,
             remove_rule,
             undo_last_rule,
+            suggest_prefix,
             hooks_status,
             install_hooks,
             uninstall_hooks,
