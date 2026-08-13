@@ -277,10 +277,27 @@ body {
   white-space: nowrap;
 }
 
-/* Set apart from the tabs: this one changes the shape, not the view. */
-.titlebar nav .collapse {
-  margin-left: 6px;
-  border-left-color: var(--text-dim);
+/* Not a tab. Sitting in the tab row behind its own glyph, it read as a
+   fourth view; drawn where every other window puts minimize, and shaped
+   like it, nobody has to be told what it does. */
+.collapse {
+  flex: none;
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-dim);
+  /* The glyph is a bare dash: only weight and width make it read as a
+     control rather than punctuation. */
+  font-size: 15px;
+  line-height: 1;
+}
+
+.collapse:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
 }
 
 .nav-icon {
@@ -298,13 +315,7 @@ body {
 
 /* With labels, the icon would only repeat what the word already says. */
 @media (min-width: 401px) {
-  /* Set apart from the tabs: this one changes the shape, not the view. */
-.titlebar nav .collapse {
-  margin-left: 6px;
-  border-left-color: var(--text-dim);
-}
-
-.nav-icon {
+  .nav-icon {
     display: none;
   }
 }

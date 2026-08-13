@@ -363,16 +363,18 @@ export default function App() {
           >
             <span className="label">{t.nav.settings}</span> <kbd>S</kbd>
           </button>
-          {/* Not a tab: it changes the panel's shape rather than its
-              contents, so it sits apart from the group and says so. */}
-          <button
-            className="collapse"
-            title={t.pill.collapse}
-            onClick={() => void api.collapsePanel()}
-          >
-            ▬ <kbd>C</kbd>
-          </button>
         </nav>
+
+        {/* Not a tab: it changes the panel's shape, not what is shown. Drawn
+            as the window control it behaves like, since a bespoke glyph in
+            the tab row read as another view. */}
+        <button
+          className="collapse"
+          title={t.pill.collapse}
+          onClick={() => void api.collapsePanel()}
+        >
+          –
+        </button>
       </header>
 
       {view === "setup" && (

@@ -146,7 +146,7 @@ export const en = {
   pill: {
     hint: "Click to open",
     drag: "Drag to move (does not open)",
-    collapse: "Collapse to the bar — click the bar or press Alt+Space to open it again",
+    collapse: "Collapse to the bar (C) — click the bar or press Alt+Space to open it again",
     info: (n: number) => `${n} new`,
   },
   snooze: {

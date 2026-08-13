@@ -146,7 +146,7 @@ export const ja: Dictionary = {
   pill: {
     hint: "クリックで開く",
     drag: "ドラッグで移動（ここでは開かない）",
-    collapse: "バーに畳む — バーをクリックするか Alt+Space で戻る",
+    collapse: "バーに畳む（C）— バーをクリックするか Alt+Space で戻る",
     info: (n: number) => `${n} 件`,
   },
   snooze: {
