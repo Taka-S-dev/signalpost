@@ -6,7 +6,10 @@
 //! of from the editor window.
 
 use axum::{
-    extract::State,
+    extract::{Request, State},
+    http::StatusCode,
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -65,17 +68,47 @@ async fn note(state: &Arc<AppState>) {
     state.note_hook();
 }
 
+/// Rejects a hook URL that does not carry the token.
+///
+/// Answers 404 rather than 403: a caller guessing at the port learns only
+/// that there is nothing here, not that there is something worth a second
+/// guess.
+async fn guard(request: Request, next: Next) -> Response {
+    let supplied = request
+        .uri()
+        .path()
+        .strip_prefix("/hook/")
+        .and_then(|rest| rest.split('/').next())
+        .unwrap_or_default();
+
+    if crate::token::matches(supplied) {
+        next.run(request).await
+    } else {
+        StatusCode::NOT_FOUND.into_response()
+    }
+}
+
 pub fn router(state: Arc<AppState>) -> Router {
+    // Every hook sits behind the token. `/health` and `/queue` do not: they
+    // report nothing that a process on this machine could not see anyway, and
+    // health has to answer for anything checking whether the app is up.
+    // Merged rather than nested: nesting rewrites the path the guard sees,
+    // which left it comparing the token against an empty string and refusing
+    // every request, including the real ones.
+    let hooks = Router::new()
+        .route("/hook/{token}/permission", post(permission))
+        .route("/hook/{token}/notification", post(notification))
+        .route("/hook/{token}/tool-settled", post(tool_settled))
+        .route("/hook/{token}/codex", post(codex))
+        .route("/hook/{token}/turn-start", post(turn_start))
+        .route("/hook/{token}/turn-end", post(turn_end))
+        .route("/hook/{token}/session-end", post(session_end))
+        .layer(middleware::from_fn(guard));
+
     Router::new()
         .route("/health", get(health))
         .route("/queue", get(queue))
-        .route("/hook/permission", post(permission))
-        .route("/hook/notification", post(notification))
-        .route("/hook/tool-settled", post(tool_settled))
-        .route("/hook/codex", post(codex))
-        .route("/hook/turn-start", post(turn_start))
-        .route("/hook/turn-end", post(turn_end))
-        .route("/hook/session-end", post(session_end))
+        .merge(hooks)
         .with_state(state)
 }
 

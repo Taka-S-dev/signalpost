@@ -9,6 +9,7 @@ mod sessions;
 mod settings;
 mod state;
 mod switcher;
+mod token;
 mod ui;
 
 use std::sync::Arc;
@@ -449,6 +450,10 @@ pub fn run() {
                     std::env::temp_dir()
                 })
                 .join(PRODUCT_DIR);
+            // Before anything reads a hook URL: both the server and the
+            // installer need the same token, and the installer is reachable
+            // from the setup screen as soon as the window exists.
+            token::init(&config_dir);
             let shared = Arc::new(AppState::new(handle.clone(), config_dir));
             app.manage(shared.clone());
 

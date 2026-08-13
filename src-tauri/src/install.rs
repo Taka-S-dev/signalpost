@@ -12,8 +12,15 @@ pub fn settings_path(home: &Path) -> PathBuf {
     home.join(".claude").join("settings.json")
 }
 
+/// The token sits in the path so that a process which cannot read the config
+/// directory cannot post to these endpoints at all.
 fn endpoint(path: &str) -> String {
-    format!("http://127.0.0.1:{}/hook/{}", server::port(), path)
+    format!(
+        "http://127.0.0.1:{}/hook/{}/{}",
+        server::port(),
+        crate::token::current(),
+        path
+    )
 }
 
 fn hook_entry(path: &str, timeout: u64) -> Value {
@@ -45,19 +52,39 @@ fn wiring() -> Vec<(&'static str, &'static str, u64)> {
     ]
 }
 
-/// True when an entry points at one of our endpoints, regardless of port.
-fn is_ours(entry: &Value) -> bool {
+fn urls(entry: &Value) -> Vec<&str> {
     entry
         .get("hooks")
         .and_then(Value::as_array)
         .map(|hooks| {
-            hooks.iter().any(|h| {
-                h.get("url")
-                    .and_then(Value::as_str)
-                    .is_some_and(|u| u.contains("127.0.0.1") && u.contains("/hook/"))
-            })
+            hooks
+                .iter()
+                .filter_map(|h| h.get("url").and_then(Value::as_str))
+                .collect()
         })
-        .unwrap_or(false)
+        .unwrap_or_default()
+}
+
+/// True when an entry points at one of our endpoints, whatever the port or
+/// token. Deliberately loose: this is what finds entries to replace or
+/// remove, including ones written by an older build.
+fn is_ours(entry: &Value) -> bool {
+    urls(entry)
+        .iter()
+        .any(|u| u.contains("127.0.0.1") && u.contains("/hook/"))
+}
+
+/// True only when an entry would actually reach this build.
+///
+/// An entry written before the token existed, or under a token since
+/// replaced, still looks like ours but is answered with 404. Reporting that
+/// as installed would show a green setup screen for hooks that cannot
+/// deliver anything.
+fn is_current(entry: &Value) -> bool {
+    let prefix = format!("/hook/{}/", crate::token::current());
+    urls(entry)
+        .iter()
+        .any(|u| u.contains("127.0.0.1") && u.contains(&prefix))
 }
 
 pub fn is_installed(home: &Path) -> bool {
@@ -72,7 +99,7 @@ pub fn is_installed(home: &Path) -> bool {
             .get("hooks")
             .and_then(|h| h.get(event))
             .and_then(Value::as_array)
-            .map(|entries| entries.iter().any(is_ours))
+            .map(|entries| entries.iter().any(is_current))
             .unwrap_or(false)
     })
 }

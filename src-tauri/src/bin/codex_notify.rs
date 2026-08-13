@@ -8,7 +8,7 @@
 //! Usage, as written into `~/.codex/config.toml`:
 //!
 //! ```toml
-//! notify = ["signalpost-codex.exe", "--chain", "original.exe", "its-arg"]
+//! notify = ["signalpost-codex.exe", "--token", "…", "--chain", "original.exe", "its-arg"]
 //! ```
 
 // No console window: Codex runs this on every turn, and a flash each time
@@ -20,6 +20,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 const CHAIN_FLAG: &str = "--chain";
+const TOKEN_FLAG: &str = "--token";
 const DEFAULT_PORT: u16 = 8787;
 /// The panel is either up on this machine or it is not; there is nothing to
 /// wait for beyond a local connection.
@@ -62,26 +63,43 @@ fn post(path: &str, body: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Splits `--chain <program> [args…]` off the front, leaving the event JSON
-/// Codex appended as the last argument.
-fn split(args: Vec<String>) -> (Option<(String, Vec<String>)>, Option<String>) {
+/// What a Codex command line breaks down into: the token to post with, the
+/// program to run afterwards with its own arguments, and the event JSON.
+type Invocation = (
+    Option<String>,
+    Option<(String, Vec<String>)>,
+    Option<String>,
+);
+
+/// Splits `--token <secret>` and `--chain <program> [args…]` off the front,
+/// leaving the event JSON Codex appended as the last argument.
+fn split(args: Vec<String>) -> Invocation {
     let mut args = args;
     let json = args.pop();
+
+    let mut token = None;
+    if args.first().map(String::as_str) == Some(TOKEN_FLAG) && args.len() >= 2 {
+        token = Some(args[1].clone());
+        args.drain(..2);
+    }
 
     if args.first().map(String::as_str) == Some(CHAIN_FLAG) && args.len() >= 2 {
         let program = args[1].clone();
         let rest = args[2..].to_vec();
-        return (Some((program, rest)), json);
+        return (token, Some((program, rest)), json);
     }
-    (None, json)
+    (token, None, json)
 }
 
 fn main() {
-    let (chain, json) = split(std::env::args().skip(1).collect());
+    let (token, chain, json) = split(std::env::args().skip(1).collect());
 
     if let Some(body) = &json {
+        // Without a token the post is answered with 404, which is the same
+        // outcome as the panel not running: the chained program still runs.
+        let path = format!("/hook/{}/codex", token.unwrap_or_default());
         // A panel that is not running is the normal case, not an error.
-        let _ = post("/hook/codex", body);
+        let _ = post(&path, body);
     }
 
     // Run the original program last, and pass the event through unchanged so
@@ -104,14 +122,15 @@ mod tests {
 
     #[test]
     fn the_event_json_is_the_last_argument() {
-        let (chain, json) = split(v(&["{\"type\":\"x\"}"]));
+        let (token, chain, json) = split(v(&["{\"type\":\"x\"}"]));
+        assert!(token.is_none());
         assert!(chain.is_none());
         assert_eq!(json.as_deref(), Some("{\"type\":\"x\"}"));
     }
 
     #[test]
     fn a_chained_program_keeps_its_own_arguments() {
-        let (chain, json) = split(v(&["--chain", "orig.exe", "turn-ended", "{}"]));
+        let (_, chain, json) = split(v(&["--chain", "orig.exe", "turn-ended", "{}"]));
         let (program, args) = chain.unwrap();
         assert_eq!(program, "orig.exe");
         assert_eq!(args, v(&["turn-ended"]));
@@ -120,8 +139,35 @@ mod tests {
 
     #[test]
     fn a_chain_flag_without_a_program_is_ignored_rather_than_panicking() {
-        let (chain, json) = split(v(&["--chain", "{}"]));
+        let (_, chain, json) = split(v(&["--chain", "{}"]));
         assert!(chain.is_none());
+        assert_eq!(json.as_deref(), Some("{}"));
+    }
+
+    #[test]
+    fn the_token_is_taken_off_the_front_and_the_chain_still_parses() {
+        let (token, chain, json) = split(v(&[
+            "--token",
+            "abc123",
+            "--chain",
+            "orig.exe",
+            "turn-ended",
+            "{}",
+        ]));
+        assert_eq!(token.as_deref(), Some("abc123"));
+        let (program, args) = chain.unwrap();
+        assert_eq!(program, "orig.exe");
+        assert_eq!(args, v(&["turn-ended"]));
+        assert_eq!(json.as_deref(), Some("{}"));
+    }
+
+    /// An entry written by an older build has no token; it must still run
+    /// whatever was chained behind it rather than fall over.
+    #[test]
+    fn a_registration_without_a_token_still_chains() {
+        let (token, chain, json) = split(v(&["--chain", "orig.exe", "{}"]));
+        assert!(token.is_none());
+        assert!(chain.is_some());
         assert_eq!(json.as_deref(), Some("{}"));
     }
 }

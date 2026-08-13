@@ -66,4 +66,5 @@ gen/schemas/
 **/*.p12
 **/*.pfx
 **/id_rsa*
+**/hook-token
 **/*.local.*

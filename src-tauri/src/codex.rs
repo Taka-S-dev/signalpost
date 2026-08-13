@@ -14,6 +14,7 @@ const SHIM: &str = "signalpost-codex.exe";
 /// pointing at a binary that no longer exists.
 const FORMER_SHIM: &str = "claudenotify-codex.exe";
 const CHAIN_FLAG: &str = "--chain";
+const TOKEN_FLAG: &str = "--token";
 
 pub fn config_path(home: &Path) -> PathBuf {
     home.join(".codex").join("config.toml")
@@ -97,7 +98,14 @@ pub fn install(home: &Path, shim: &Path, keep_existing: bool) -> Result<PathBuf,
 
     let chained = if keep_existing { chained } else { Vec::new() };
 
-    let mut notify = vec![shim.display().to_string()];
+    // The shim posts to the same guarded endpoint as the Claude hooks, so it
+    // is told the token here rather than reading the config directory itself,
+    // which it has no way to locate.
+    let mut notify = vec![
+        shim.display().to_string(),
+        TOKEN_FLAG.to_string(),
+        crate::token::current().to_string(),
+    ];
     if !chained.is_empty() {
         notify.push(CHAIN_FLAG.to_string());
         notify.extend(chained);
@@ -167,6 +175,22 @@ mod tests {
         as_strings(raw.parse::<DocumentMut>().unwrap().get("notify"))
     }
 
+    /// The shim followed by the token it is given. Every install starts this
+    /// way; the tests care about what comes after it.
+    fn head(shim: &str) -> Vec<String> {
+        vec![
+            shim.to_string(),
+            TOKEN_FLAG.to_string(),
+            crate::token::current().to_string(),
+        ]
+    }
+
+    fn expect(shim: &str, tail: &[&str]) -> Vec<String> {
+        let mut all = head(shim);
+        all.extend(tail.iter().map(|s| s.to_string()));
+        all
+    }
+
     #[test]
     fn an_existing_notify_program_is_chained_not_replaced() {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\nmodel = \"gpt\"\n");
@@ -174,12 +198,10 @@ mod tests {
 
         assert_eq!(
             notify_of(&home),
-            vec![
+            expect(
                 "C:/app/signalpost-codex.exe",
-                "--chain",
-                "orig.exe",
-                "turn-ended"
-            ]
+                &["--chain", "orig.exe", "turn-ended"]
+            )
         );
         std::fs::remove_dir_all(&home).ok();
     }
@@ -193,7 +215,7 @@ mod tests {
 
         assert_eq!(
             notify_of(&home),
-            vec!["C:/app/signalpost-codex.exe", "--chain", "orig.exe"]
+            expect("C:/app/signalpost-codex.exe", &["--chain", "orig.exe"])
         );
         std::fs::remove_dir_all(&home).ok();
     }
@@ -245,7 +267,7 @@ mod tests {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\n");
         install(&home, Path::new("C:/app/signalpost-codex.exe"), false).unwrap();
 
-        assert_eq!(notify_of(&home), vec!["C:/app/signalpost-codex.exe"]);
+        assert_eq!(notify_of(&home), head("C:/app/signalpost-codex.exe"));
         std::fs::remove_dir_all(&home).ok();
     }
 
@@ -257,7 +279,7 @@ mod tests {
 
         assert_eq!(
             notify_of(&home),
-            vec!["C:/app/signalpost-codex.exe", "--chain", "orig.exe"]
+            expect("C:/app/signalpost-codex.exe", &["--chain", "orig.exe"])
         );
         std::fs::remove_dir_all(&home).ok();
     }
@@ -267,7 +289,7 @@ mod tests {
         let home = scratch("model = \"gpt\"\n\n[windows]\nsandbox = \"elevated\"\n");
         install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
 
-        assert_eq!(notify_of(&home), vec!["C:/app/signalpost-codex.exe"]);
+        assert_eq!(notify_of(&home), head("C:/app/signalpost-codex.exe"));
         std::fs::remove_dir_all(&home).ok();
     }
 }

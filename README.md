@@ -153,7 +153,7 @@ Codex allows exactly one `notify` program, so installing cannot simply take
 the slot. A small shim goes in front and chains whatever was already there:
 
 ```toml
-notify = ["…\\signalpost-codex.exe", "--chain", "…\\your-program.exe", "its-arg"]
+notify = ["…\\signalpost-codex.exe", "--token", "…", "--chain", "…\\your-program.exe", "its-arg"]
 ```
 
 The shim posts the event JSON to the panel and then runs the original program
@@ -180,6 +180,27 @@ granted. See [docs/DESIGN.md](docs/DESIGN.md) for what was measured.
 
 The server binds `127.0.0.1` only. The port defaults to `8787` and can be
 changed with `SIGNALPOST_PORT` — reinstall the hooks afterwards.
+
+### What the endpoints are protected by
+
+Every hook URL carries a secret generated on first run and kept in
+`hook-token` beside the other config, so the installed hooks look like
+`/hook/<token>/permission`. Anything else gets a 404.
+
+| | |
+| --- | --- |
+| Another machine | Cannot reach it: the socket is bound to loopback |
+| A web page you visit | Cannot post: the endpoints require `application/json`, so a browser must preflight, and no CORS headers are returned |
+| Another account on this PC | Cannot post: loopback is shared, but the token is not readable from another profile |
+| Code running as **you** | **Can** post — it can read the token, as it can read anything else of yours |
+
+The last row is the honest limit. A forged request cannot make Claude Code run
+anything: answering it only answers that request. What it could do is put a
+convincing row in the panel, which is why the token exists at all.
+
+A dangerous call cannot become an auto-allow rule. The checkbox is disabled in
+the UI *and* the backend refuses, so the invariant does not rest on the
+screen being the only way in.
 
 ## Auto-allow rules
 

@@ -98,6 +98,11 @@ pub struct AppState {
 }
 
 /// Files carried over when the app identifier changes.
+///
+/// `hook-token` is not among them on purpose: a token that moved with the
+/// config would keep working, but so would every hook URL written under the
+/// old install, and a fresh one costs only the reinstall the setup screen
+/// already asks for.
 const CONFIG_FILES: [&str; 5] = [
     "auto-allow.json",
     "projects.json",
