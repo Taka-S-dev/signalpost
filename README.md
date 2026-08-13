@@ -9,6 +9,13 @@ The point is not to notify you so you go and find the right window — it is to
 make finding the window unnecessary. Approvals are answered from the panel, so
 the sessions never need to be visited at all.
 
+<img src="docs/images/panel.png" width="400" alt="The panel: a blocked edit
+showing its diff with allow and deny, a second session waiting on a command, a
+question, and a finished turn.">
+
+Blocked calls sit at the top, oldest first. `Y` allows, `N` denies, and the
+session carries on — the editor window is never opened.
+
 ## How it works
 
 Claude Code's `PermissionRequest` hook can be an HTTP hook, and whatever it
