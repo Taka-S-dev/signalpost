@@ -211,8 +211,8 @@ npm run tauri build    # NSIS インストーラを生成
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-CI は同じ 5 段を Windows で回す（型検査・フロントのビルド・`cargo fmt --check`・
-`clippy -D warnings`・`cargo test`）。手元で緑なら CI でも緑になる。
+CI は同じ 6 つを Windows で回す（型検査・`npm test`・フロントのビルド・
+`cargo fmt --check`・`clippy -D warnings`・`cargo test`）。手元で緑なら CI でも緑になる。
 Windows 限定なのは、動かないプラットフォームでの合格に意味が無いため。
 
 設計上の判断と、調べて分かった事実（どこにも記載のないフックの挙動を含む）は

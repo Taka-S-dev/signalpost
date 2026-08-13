@@ -241,10 +241,10 @@ npm run tauri build    # produce an NSIS installer
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-CI runs the same five steps on Windows — typecheck, frontend build, `cargo
-fmt --check`, `clippy -D warnings`, `cargo test` — so anything green here is
-green there. Windows only, because a pass from a platform the app cannot run
-on would say nothing.
+CI runs the same six checks on Windows — typecheck, `npm test`, frontend
+build, `cargo fmt --check`, `clippy -D warnings`, `cargo test` — so anything
+green here is green there. Windows only, because a pass from a platform the
+app cannot run on would say nothing.
 
 - Frontend: React 19 + TypeScript + Vite
 - Backend: Rust / Tauri 2 / axum

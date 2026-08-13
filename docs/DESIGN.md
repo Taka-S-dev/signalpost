@@ -323,9 +323,25 @@ That is a real gap and the honest fix is to make `AppState` generic over the
 runtime, which reaches ui.rs and lib.rs as well. Until then the measurements
 in §2 are the evidence, and they are dated for that reason.
 
-Also uncovered: `ui.rs` (window placement, largely Win32 and DPI behaviour
-that a test would only restate) and the frontend, which has no test runner —
-`tsc` is the only thing holding it.
+The frontend holds what is actually its own: the elapsed-time formatting at
+each of its three boundaries, and which row the keys will act on. Selection
+is tracked by id rather than index so that a row resolving above the cursor
+cannot slide a different one under it — a test asserts exactly that, because
+the cost of it being wrong is answering a call nobody read.
+
+Ordering and the collapsing of repeats are **not** frontend concerns despite
+looking like it; both are in `state.rs`, and both are among the untestable
+parts above.
+
+Also uncovered: `ui.rs`, window placement that is largely Win32 and DPI
+behaviour a test would only restate.
+
+**Each of these was checked by breaking it on purpose** and confirming the
+right test failed. One survived: deleting the clamp in `move` changed nothing
+observable, because the guard that skips a missing row already covers a step
+of one. The test that now distinguishes them asks for a jump past the end,
+which lands on the end rather than doing nothing. A test suite nobody has
+tried to break is a suite of unknown strength.
 
 ---
 
