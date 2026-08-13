@@ -65,12 +65,17 @@ take keyboard focus**, so it never interrupts what you are typing. Press
 | `J` / `K` | Move between rows |
 | `Y` | Allow |
 | `N` | Deny |
-| `A` | Allow + **always allow this exact call** |
-| `Shift+A` | Allow + **always allow this tool in this project** |
 | `Enter` | Bring that session's window to the front |
 | `D` | Dismiss an informational row |
+| `Shift+D` | Clear the finished rows |
 | `W` / `P` / `R` / `S` | Windows / colors / rules / settings |
+| `M` | Stop popping up for 30 minutes |
+| `C` | Collapse to the bar |
 | `Esc` | Hide the panel; from any other view, go back to the inbox |
+| `?` | Show this list in the app |
+
+No key creates a standing rule. Making a call permanent should not be one
+keystroke away from answering it once — tick the checkbox on the row instead.
 
 ### Ordering
 
@@ -138,26 +143,42 @@ original back. Both are done from **Settings**.
 | --- | --- | --- |
 | `PermissionRequest` | `/hook/permission` | Parks the call and shows the row (timeout 600s) |
 | `Notification` | `/hook/notification` | Questions and finished turns |
-| `PostToolUse` | `/hook/tool-settled` | Retires a row approved in the editor |
-| `PermissionDenied` | `/hook/tool-settled` | Retires a row denied in the editor |
+| `PostToolUse` | `/hook/tool-settled` | Retires a row settled in the editor |
+| `PermissionDenied` | `/hook/tool-settled` | Auto-mode denials only; rarely fires |
 | `Stop` | `/hook/turn-end` | Clears anything still parked when the turn ends |
 | `SessionEnd` | `/hook/session-end` | Cleans up a finished session's rows |
 
 No matchers are used; the app filters by type itself, so a notification type
 added later cannot silently stop arriving.
 
+Approve in the editor rather than the panel and the row clears only once the
+command **finishes running** — no hook reports the moment a permission is
+granted. See [docs/DESIGN.md](docs/DESIGN.md) for what was measured.
+
 The server binds `127.0.0.1` only. The port defaults to `8787` and can be
 changed with `SIGNALPOST_PORT` — reinstall the hooks afterwards.
 
 ## Auto-allow rules
 
-Rules created with `A` / `Shift+A` are stored in `auto-allow.json`, and
-matching calls are **allowed immediately without ever reaching the panel**.
-The queue gets quieter the more you use it. List and remove them under `R`.
+Tick **allow without asking** before answering and a rule is stored in
+`auto-allow.json`; matching calls are then **allowed immediately without ever
+reaching the panel**. The queue gets quieter the more you use it. List, count
+and remove them under `R`.
 
-Matching is tool name plus the scope you chose — there are no wildcards.
-`A` (this exact call) is the narrowest, so a rule can never allow more than
-what you approved.
+Three scopes, narrowest first:
+
+| Scope | Matches |
+| --- | --- |
+| this exact call | the command byte for byte |
+| **commands starting with…** | an editable prefix, ending on a word boundary |
+| every call of this tool | any call of it, contents unseen |
+
+The prefix scope is the default and usually the one you want: shell commands
+are never byte-identical twice, so an exact-call rule made on one will not fire
+again. Rules cover the project directory **and everything below it**, since a
+session started in `frontend/` reports that directory rather than the root.
+
+Calls the risk rules mark dangerous cannot be turned into a rule at all.
 
 ## Development
 
@@ -173,6 +194,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Config lives in the app config directory: `auto-allow.json`, `projects.json`,
 `risk.json`, `settings.json`, `window.json`.
+
+`GET /queue` reports what the inbox is holding and how long each row has
+waited — useful for checking whether a row was retired when it should have
+been.
+
+**[docs/DESIGN.md](docs/DESIGN.md)** records why the app is built this way and
+what had to be measured to find out, including the hook behaviour that is not
+documented anywhere. Read it before changing the approval path.
 
 ## Limitations
 
