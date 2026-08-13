@@ -815,6 +815,14 @@ h2.secondary {
   font-size: 11.5px;
 }
 
+/* Quiet: it is reassurance, not part of the decision. */
+.remember-note {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
 /* The answer itself: wide targets, full weight. */
 .actions.decide button {
   flex: 1;

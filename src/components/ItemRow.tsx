@@ -103,16 +103,22 @@ export function ItemRow({
                 </span>
               </label>
               {remember !== null && !dangerous && (
-                <select
-                  className="remember-scope"
-                  value={remember}
-                  onChange={(e) => onRemember(e.target.value as Scope)}
-                >
-                  <option value="exactCall">{t.actions.scopeCall(project)}</option>
-                  <option value="toolInProject">
-                    {t.actions.scopeTool(item.toolName, project)}
-                  </option>
-                </select>
+                <>
+                  <select
+                    className="remember-scope"
+                    value={remember}
+                    onChange={(e) => onRemember(e.target.value as Scope)}
+                  >
+                    <option value="exactCall">{t.actions.scopeCall(project)}</option>
+                    <option value="toolInProject">
+                      {t.actions.scopeTool(item.toolName, project)}
+                    </option>
+                  </select>
+                  {/* Where to undo this belongs here, at the moment the rule
+                      is about to exist — not in a settings screen you would
+                      have to already know about to go looking. */}
+                  <p className="remember-note">{t.actions.rememberWhere}</p>
+                </>
               )}
 
               <div className="actions decide">

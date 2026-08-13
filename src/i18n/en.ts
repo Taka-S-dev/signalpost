@@ -27,6 +27,7 @@ export const en = {
     deny: "Deny",
     rememberLabel: "Allow this without asking from now on",
     rememberBlocked: " — not offered for calls marked dangerous",
+    rememberWhere: "Rules you create can be deleted any time under ⚑ Rules (R)",
     scopeCall: (project: string) => `just this call, in ${project}`,
     scopeTool: (tool: string, project: string) => `every ${tool} call in ${project}`,
     ruleAdded: (tool: string) => `Standing rule created for ${tool}.`,

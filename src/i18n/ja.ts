@@ -24,6 +24,7 @@ export const ja: Dictionary = {
     deny: "拒否",
     rememberLabel: "次回から確認せずに許可する",
     rememberBlocked: "（危険と判定された操作では選べません）",
+    rememberWhere: "作ったルールは ⚑ ルール の画面（R キー）でいつでも削除できます",
     scopeCall: (project: string) => `この呼び出しだけ / ${project} のみ`,
     scopeTool: (tool: string, project: string) => `${project} の ${tool} すべて`,
     ruleAdded: (tool: string) => `${tool} の自動許可ルールを作りました。`,
