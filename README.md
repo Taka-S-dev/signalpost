@@ -9,6 +9,13 @@ The point is not to notify you so you go and find the right window — it is to
 make finding the window unnecessary. Approvals are answered from the panel, so
 the sessions never need to be visited at all.
 
+That matters most on one screen. A session you cannot see is a session you
+have to keep checking, so a laptop ends up showing the agent instead of the
+work. Here the sessions can be buried under whatever you are actually doing:
+the panel stays on top of them, keeps out of the taskbar, and never takes
+keyboard focus, so it can sit in a corner while you use the whole screen for
+something else.
+
 <img src="docs/images/panel.png" width="400" alt="The panel: a blocked edit
 showing its diff with allow and deny, a second session waiting on a command, a
 question, and a finished turn.">
