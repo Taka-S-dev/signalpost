@@ -1,0 +1,68 @@
+name: Release
+
+# Tag a version and this attaches the installer to a GitHub release, so the
+# app can be tried without a Rust and Node toolchain.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A tag that disagrees with the manifest would publish an installer
+      # labelled as a version it does not contain, and the file name inside
+      # comes from the manifest either way.
+      - name: Check the tag matches the version in the manifest
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}" -replace '^v', ''
+          $manifest = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne $manifest) {
+            throw "tag $tag does not match tauri.conf.json $manifest"
+          }
+          "tag and manifest agree on $manifest"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build the installer
+        run: npm run tauri build
+
+      # Named rather than globbed: an empty glob would publish a release with
+      # nothing attached and still report success.
+      - name: Publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $installer = "src-tauri/target/release/bundle/nsis/Signalpost_${version}_x64-setup.exe"
+          if (-not (Test-Path $installer)) { throw "no installer at $installer" }
+          $notes = @"
+Windows x64 installer.
+
+The build is unsigned, so SmartScreen shows "Windows protected your PC" on
+first run — More info, then Run anyway. Ask the setup screen to install the
+hooks afterwards, and restart any Claude Code session that is already open.
+"@
+          gh release create "${{ github.ref_name }}" $installer --title "${{ github.ref_name }}" --notes $notes

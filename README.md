@@ -76,6 +76,12 @@ Nothing can end up stuck.
 
 ## Getting started
 
+Windows x64 installers are attached to each
+[release](https://github.com/Taka-S-dev/signalpost/releases). The build is
+unsigned, so SmartScreen shows *"Windows protected your PC"* on first run —
+**More info**, then **Run anyway**. Building from source instead is two
+commands, under *Development* below.
+
 1. Run the app — it lives in the tray.
 2. The **Settings** screen opens on first run. Press **Install hooks**.
    They are merged into `~/.claude/settings.json`, keeping your existing
