@@ -52,7 +52,7 @@ export const en = {
     installed: "Hooks are installed",
     live: "Hooks are installed and arriving",
     needsRestart: "Installed, but nothing has arrived yet",
-    needsRestartHint: "Hooks are read when a session starts, so sessions already running are still without them. Restart Claude Code and this turns green on the first event.",
+    needsRestartHint: "No hook has arrived since this app started; the first event turns it green. If you just installed them, sessions already running were started without them and need a restart.",
     notInstalled: "Hooks are not installed yet",
     explain: (port: number) =>
       `Adds PermissionRequest / Notification / SessionEnd HTTP hooks to ~/.claude/settings.json. They post to 127.0.0.1:${port} only, existing settings are kept, and a .bak is written first.`,

@@ -48,6 +48,12 @@ fn array_of(values: &[String]) -> Item {
     Item::Value(Value::Array(array))
 }
 
+/// Whether Codex is wired to a shim that actually exists.
+///
+/// Deliberately stricter than [`is_shim`]: an entry left by the previous name
+/// points at a binary that is no longer there, and reporting that as
+/// "configured" would be the same lie as saying hooks are installed while
+/// nothing arrives. It has to read as not set up, so it gets set up.
 pub fn is_installed(home: &Path) -> bool {
     let Ok(raw) = std::fs::read_to_string(config_path(home)) else {
         return false;
@@ -55,9 +61,10 @@ pub fn is_installed(home: &Path) -> bool {
     let Ok(doc) = raw.parse::<DocumentMut>() else {
         return false;
     };
-    as_strings(doc.get("notify"))
-        .first()
-        .is_some_and(|first| is_shim(first))
+    as_strings(doc.get("notify")).first().is_some_and(|first| {
+        first.to_lowercase().replace('\\', "/").ends_with(SHIM)
+            && Path::new(first).exists()
+    })
 }
 
 /// Prepends the shim.
@@ -193,9 +200,25 @@ mod tests {
     }
 
     #[test]
+    fn an_entry_pointing_at_a_missing_shim_does_not_count_as_installed() {
+        let home = scratch("notify = [ \"C:/gone/signalpost-codex.exe\" ]\n");
+        assert!(!is_installed(&home));
+
+        let former = scratch("notify = [ \"C:/gone/claudenotify-codex.exe\" ]\n");
+        assert!(!is_installed(&former));
+
+        std::fs::remove_dir_all(&home).ok();
+        std::fs::remove_dir_all(&former).ok();
+    }
+
+    #[test]
     fn uninstall_restores_the_original_program() {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\n");
-        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
+        // A real path is needed: is_installed checks the shim is on disk.
+        let shim = std::env::current_exe().unwrap();
+        let shim = shim.with_file_name(SHIM);
+        std::fs::write(&shim, b"").unwrap();
+        install(&home, &shim, true).unwrap();
         assert!(is_installed(&home));
 
         uninstall(&home).unwrap();

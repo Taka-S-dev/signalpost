@@ -49,7 +49,7 @@ export const ja: Dictionary = {
     installed: "hooks は設定済みです",
     live: "hooks は動作中です（受信を確認）",
     needsRestart: "設定済みですが、まだ届いていません",
-    needsRestartHint: "hooks はセッション開始時に読まれるため、すでに動いているセッションには反映されていません。Claude Code を再起動すると、最初のイベントでここが緑になります。",
+    needsRestartHint: "起動してから hooks のイベントを一度も受け取っていない状態です。何か動かせば最初のイベントで緑になります。設定した直後なら、すでに動いているセッションには反映されていないので Claude Code の再起動が要ります。",
     notInstalled: "hooks が未設定です",
     explain: (port: number) =>
       `~/.claude/settings.json に PermissionRequest / Notification / SessionEnd の HTTP hook を追加します。送信先は 127.0.0.1:${port} のみで、既存の設定は残したまま .bak を作ってから書き換えます。`,
