@@ -48,6 +48,34 @@ jobs:
       - name: Build the installer
         run: npm run tauri build
 
+      # Both binaries, because the app looks for the Codex shim beside itself,
+      # and the marker, because that is what makes the copy portable.
+      - name: Assemble the portable build
+        shell: pwsh
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $stage = "portable/Signalpost"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          foreach ($exe in @('signalpost.exe', 'signalpost-codex.exe')) {
+            $from = "src-tauri/target/release/$exe"
+            if (-not (Test-Path $from)) { throw "missing $from" }
+            Copy-Item $from $stage
+          }
+          Set-Content "$stage/portable.txt" @(
+            'Signalpost, portable build.'
+            ''
+            'Settings, auto-allow rules and the webview cache all live in the'
+            'data folder beside this file. Delete the folder and nothing is'
+            'left behind.'
+            ''
+            'Removing this file turns that off: the app then stores its state'
+            'in %APPDATA%\Signalpost, the way the installed build does.'
+            ''
+            'Keep signalpost-codex.exe next to signalpost.exe. Wiring up Codex'
+            'points at it by name from its own folder.'
+          )
+          Compress-Archive -Path $stage -DestinationPath "Signalpost_${version}_x64-portable.zip" -Force
+
       # Named rather than globbed: an empty glob would publish a release with
       # nothing attached and still report success.
       - name: Publish
@@ -57,17 +85,25 @@ jobs:
         run: |
           $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           $installer = "src-tauri/target/release/bundle/nsis/Signalpost_${version}_x64-setup.exe"
-          if (-not (Test-Path $installer)) { throw "no installer at $installer" }
+          $portable = "Signalpost_${version}_x64-portable.zip"
+          foreach ($f in @($installer, $portable)) {
+            if (-not (Test-Path $f)) { throw "nothing to publish at $f" }
+          }
           # Joined from an array rather than written as a here-string: the
           # terminator of one has to sit at column zero, which cannot happen
           # inside an indented YAML block, and the file stops parsing.
           $notes = @(
-            'Windows x64 installer.'
+            'Windows x64. Two ways to get it:'
             ''
-            'The build is unsigned, so SmartScreen shows "Windows protected your PC"'
-            'on first run: More info, then Run anyway.'
+            '- **setup.exe** installs it and stores settings in %APPDATA%\Signalpost.'
+            '- **portable.zip** runs from anywhere and keeps everything in a data'
+            '  folder beside the executable, including the webview cache. Delete'
+            '  the folder and nothing is left behind.'
+            ''
+            'Neither build is signed, so SmartScreen shows "Windows protected your'
+            'PC" on first run: More info, then Run anyway.'
             ''
             'Install the hooks from the setup screen afterwards, and restart any'
             'Claude Code session that is already open.'
           ) -join "`n"
-          gh release create "${{ github.ref_name }}" $installer --title "${{ github.ref_name }}" --notes $notes
+          gh release create "${{ github.ref_name }}" $installer $portable --title "${{ github.ref_name }}" --notes $notes

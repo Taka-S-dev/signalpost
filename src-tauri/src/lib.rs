@@ -12,6 +12,7 @@ mod switcher;
 mod token;
 mod ui;
 
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -30,6 +31,35 @@ pub const TRAY_ID: &str = "signalpost-tray";
 /// the bundle identifier: that has to be a globally unique reverse-DNS
 /// string, which is not a name to leave lying in someone's AppData.
 const PRODUCT_DIR: &str = "Signalpost";
+
+/// Ships beside the executable in the portable download. Its presence is what
+/// makes the build portable; the installer does not lay it down.
+const PORTABLE_MARKER: &str = "portable.txt";
+
+/// Where settings, rules and the webview's data go.
+///
+/// A build calling itself portable has to leave nothing behind, so the marker
+/// moves everything next to the executable. An explicit file rather than a
+/// guess about where the exe sits: "am I installed?" has no reliable answer,
+/// and getting it wrong silently moves someone's rules somewhere they did not
+/// look.
+fn state_dir(exe_dir: Option<&Path>, roaming: Option<&Path>) -> PathBuf {
+    if let Some(dir) = exe_dir {
+        if dir.join(PORTABLE_MARKER).is_file() {
+            return dir.join("data");
+        }
+    }
+    match roaming {
+        Some(dir) => dir.join(PRODUCT_DIR),
+        None => std::env::temp_dir().join(PRODUCT_DIR),
+    }
+}
+
+fn exe_dir() -> Option<PathBuf> {
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf))
+}
 /// Long enough to get through a meeting, short enough to forget about safely.
 const SNOOZE_MINUTES: u64 = 30;
 
@@ -442,14 +472,11 @@ pub fn run() {
             let handle = app.handle().clone();
             // Losing the config directory only costs rule persistence; dying
             // here would take the whole approval path down with it.
-            let config_dir = app
-                .path()
-                .config_dir()
-                .unwrap_or_else(|error| {
-                    eprintln!("Signalpost: could not resolve the config directory ({error}); falling back to a temporary one");
-                    std::env::temp_dir()
-                })
-                .join(PRODUCT_DIR);
+            let roaming = app.path().config_dir().ok();
+            if roaming.is_none() {
+                eprintln!("Signalpost: could not resolve the config directory; falling back to a temporary one");
+            }
+            let config_dir = state_dir(exe_dir().as_deref(), roaming.as_deref());
             // Before anything reads a hook URL: both the server and the
             // installer need the same token, and the installer is reachable
             // from the setup screen as soon as the window exists.
@@ -549,12 +576,15 @@ fn remember_geometry(window: &tauri::Window) {
 /// reverse-DNS string to be unique; a folder someone else has to look at
 /// should be the product's name. This is the only way to have both.
 fn build_panel(app: &tauri::App) -> tauri::Result<()> {
-    let data_dir = app
+    // Through the same decision as the settings: a portable copy that still
+    // left an EBWebView folder in %LOCALAPPDATA% would not be portable, and
+    // the cache is the larger of the two.
+    let local = app
         .path()
         .app_local_data_dir()
         .ok()
-        .and_then(|p| p.parent().map(|parent| parent.join(PRODUCT_DIR)))
-        .unwrap_or_else(|| std::env::temp_dir().join(PRODUCT_DIR));
+        .and_then(|p| p.parent().map(Path::to_path_buf));
+    let data_dir = state_dir(exe_dir().as_deref(), local.as_deref());
 
     tauri::WebviewWindowBuilder::new(app, "panel", tauri::WebviewUrl::default())
         .title(PRODUCT_DIR)
@@ -724,4 +754,71 @@ fn active_shortcut(state: Shared) -> Option<String> {
 #[tauri::command]
 fn set_shortcut(state: Shared, shortcut: String) -> Option<String> {
     apply_shortcut(state.app(), &shortcut)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scratch() -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("sp-state-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn the_marker_next_to_the_executable_moves_the_state_beside_it() {
+        let exe = scratch();
+        std::fs::write(exe.join(PORTABLE_MARKER), "").unwrap();
+        let roaming = scratch();
+
+        assert_eq!(
+            state_dir(Some(&exe), Some(&roaming)),
+            exe.join("data"),
+            "a portable copy must keep its state with it"
+        );
+        std::fs::remove_dir_all(&exe).ok();
+        std::fs::remove_dir_all(&roaming).ok();
+    }
+
+    /// The installed build must never write beside its executable: that is
+    /// Program Files, and the marker is the only thing that says otherwise.
+    #[test]
+    fn without_the_marker_the_state_stays_in_the_profile() {
+        let exe = scratch();
+        let roaming = scratch();
+
+        assert_eq!(
+            state_dir(Some(&exe), Some(&roaming)),
+            roaming.join(PRODUCT_DIR)
+        );
+        std::fs::remove_dir_all(&exe).ok();
+        std::fs::remove_dir_all(&roaming).ok();
+    }
+
+    /// A directory of that name is not the marker; only a file is. Otherwise
+    /// someone's `portable.txt/` folder would silently relocate everything.
+    #[test]
+    fn a_directory_named_like_the_marker_does_not_count() {
+        let exe = scratch();
+        std::fs::create_dir_all(exe.join(PORTABLE_MARKER)).unwrap();
+        let roaming = scratch();
+
+        assert_eq!(
+            state_dir(Some(&exe), Some(&roaming)),
+            roaming.join(PRODUCT_DIR)
+        );
+        std::fs::remove_dir_all(&exe).ok();
+        std::fs::remove_dir_all(&roaming).ok();
+    }
+
+    #[test]
+    fn with_no_profile_to_write_to_it_falls_back_rather_than_failing() {
+        let exe = scratch();
+        assert_eq!(
+            state_dir(Some(&exe), None),
+            std::env::temp_dir().join(PRODUCT_DIR)
+        );
+        std::fs::remove_dir_all(&exe).ok();
+    }
 }

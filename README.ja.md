@@ -66,9 +66,18 @@ Claude Code ◀──── 判断を返す ────────────
 
 ## 使い方
 
-Windows x64 のインストーラは各
-[リリース](https://github.com/Taka-S-dev/signalpost/releases)に添付してある。
-**署名していない**ので初回に SmartScreen の「Windows によって PC が保護されました」が出る
+各[リリース](https://github.com/Taka-S-dev/signalpost/releases)に Windows x64 用を 2 つ添付してある:
+
+| | |
+| --- | --- |
+| `…-setup.exe` | インストールする。設定は `%APPDATA%\Signalpost` |
+| `…-portable.zip` | 展開して起動するだけ。設定・ルール・WebView のキャッシュはすべて exe の隣の `data` フォルダに入る。フォルダごと消せば何も残らない |
+
+ポータブル版では `signalpost-codex.exe` を `signalpost.exe` と同じ場所に置いておくこと
+（Codex の設定がその名前で参照する）。`portable.txt` を消すとポータブル動作が切れ、
+状態は `%APPDATA%` に行く。
+
+**どちらも署名していない**ので初回に SmartScreen の「Windows によって PC が保護されました」が出る
 （**詳細情報** → **実行**）。気になるならソースからビルドしてもよく、手順は下の「開発」に 2 行で書いてある。
 
 1. アプリを起動する（トレイに常駐する）
