@@ -8,7 +8,12 @@
   --bg-raised: rgb(27 30 36 / var(--alpha));
   --bg-selected: rgb(35 40 51 / var(--alpha));
   --bg-sunken: rgb(15 17 20 / var(--alpha));
+  /* Two weights, because a line that separates and a line that outlines a
+     control have different jobs. The divider may be faint; the outline is
+     the only thing saying "this is a button", and at 1.4:1 against the
+     panel it was not saying it. --line-edge clears 3:1. */
   --line: #2c313b;
+  --line-edge: #5a6376;
   --text: #e6e9ef;
   --text-dim: #9aa3b2;
   --accent: #7aa2f7;
@@ -297,6 +302,8 @@ body {
 .auto-count {
   flex: none;
   padding: var(--space-0) var(--space-2);
+  /* The faint line on purpose: the ⚑ tab reaches the same screen, so this
+     one may stay quiet rather than outline itself like a control. */
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: none;
@@ -561,7 +568,7 @@ body {
 
 .command input {
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-edge);
   border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
@@ -948,12 +955,21 @@ h2.secondary {
 
 /* Buttons ----------------------------------------------------------------- */
 
+/* Keyboard focus was invisible: not dimmed, not subtle — absent. In a panel
+   driven by J/K/Y/N that is the one indicator that cannot be missing. Only
+   :focus-visible, so clicking a button does not leave a ring behind. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+
 button {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-edge);
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
@@ -983,7 +999,7 @@ button.on {
 
 kbd {
   padding: 0 var(--space-1);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-edge);
   border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   font-family: inherit;
@@ -1179,7 +1195,7 @@ h2 {
   flex: none;
   width: 30px;
   padding: var(--space-0);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-edge);
   border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
@@ -1211,7 +1227,7 @@ h2 {
 .risk-list select {
   flex: none;
   padding: var(--space-0);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-edge);
   border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
