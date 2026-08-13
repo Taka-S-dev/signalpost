@@ -60,11 +60,15 @@ The response has to be shaped exactly like this:
 ```
 
 `decision` is an **object with a `behavior` field**, not a string, and the
-denial text is `message`, not `reason`. The published docs show
-`"decision": "allow"`, but the implementation
-(`e.hookSpecificOutput.decision.behavior === "allow"` inside `claude.exe`)
-does not read that. A wrong shape **fails silently**, which looks exactly like
-the app being ignored.
+denial text is `message`, not `reason`. A wrong shape **fails silently** —
+no error, nothing in the panel works — which is what makes it worth stating.
+
+This shape was originally read out of `claude.exe` because the documentation
+of the day showed a bare `"decision": "allow"` string that the implementation
+ignored. Checked again on 2026-08-13, the published docs now carry the object
+form, so the two agree. The reason for saying so is what it implies for a tool
+like this: it follows an interface that moves, and a change to it shows up as
+approvals quietly doing nothing rather than as an error.
 
 It fails safe: if the app is closed, or nothing is pressed within 570 seconds,
 it returns **no decision** and the prompt appears in the editor as usual.
@@ -127,6 +131,15 @@ match wins, so `git push --force` reads as a force push rather than a push.
 
 Fifteen rules ship enabled by default (force push, `reset --hard`, `rm -rf`,
 `DROP TABLE`, `npm publish`, `terraform apply`, …). Edit them under `R`.
+
+**An unmarked row is not a safe row.** These are substrings, not an
+understanding of the command. `git clean -fdx`, `del /s /q`, `kubectl delete`,
+a destructive statement phrased another way, or anything reached through a
+script will go by unmarked, and the list is yours to edit or switch off.
+
+The marking exists to catch the eye, and it feeds one real rule — a marked-
+dangerous call cannot be turned into an auto-allow rule. It is not a filter
+that decides what is safe. Read the command.
 
 ### Feedback
 
@@ -231,6 +244,22 @@ again. Rules cover the project directory **and everything below it**, since a
 session started in `frontend/` reports that directory rather than the root.
 
 Calls the risk rules mark dangerous cannot be turned into a rule at all.
+
+### How wide to make them
+
+Every rule here trades a prompt you would have read for one you will not see
+again. Worth spending on a build or a test command you approve twenty times a
+day; not worth spending on anything that writes, publishes or deletes.
+
+**"Every call of this tool" is the one to be careful with.** On `Bash` or
+`PowerShell` it approves every future command in that project sight unseen,
+which is close to turning the shell prompt off there. The prefix scope exists
+so you do not have to: `npm test` covers the command you meant without
+covering the next one.
+
+The app ships with no rules. Adding none is a perfectly good way to run it —
+the panel's job is answering prompts in one place, and it does that whether
+or not anything is remembered.
 
 ## Development
 

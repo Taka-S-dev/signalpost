@@ -20,7 +20,7 @@ response is **held open** until the user presses a key.
 Everything else — the panel, the bar, the tray — exists to make that 600-second
 window usable.
 
-**The response shape is undocumented and the published docs are wrong.**
+**The response shape has to be exact, and getting it wrong is silent.**
 
 ```json
 { "hookSpecificOutput": {
@@ -29,12 +29,23 @@ window usable.
 ```
 
 `decision` is an object with a `behavior` field, not a string. The denial text
-key is `message`, not `reason`. The docs show `"decision": "allow"`, which the
-implementation does not read — the check inside `claude.exe` is
-`e.hookSpecificOutput.decision.behavior === "allow"`.
+key is `message`, not `reason`. A wrong shape produces no error at all — it
+looks exactly like the app being ignored, which is how the first working build
+was mistaken for a broken one.
 
-A wrong shape **fails silently**. It looks exactly like the app being ignored,
-which is how the first working build was mistaken for a broken one.
+**This was found by reading `claude.exe`** (`e.hookSpecificOutput.decision
+.behavior === "allow"`), because the documentation of the day showed a bare
+`"decision": "allow"` string that the implementation did not read.
+
+**Re-checked 2026-08-13: the published docs now show the object form**, and
+the guide states outright that `PermissionRequest` uses
+`hookSpecificOutput.decision.behavior`. The two agree, so the earlier note
+that the docs were wrong has been removed rather than left to mislead.
+
+Keep the date. The point that survives is not that the docs were once wrong —
+it is that this app rides an interface that moves, and a change to it surfaces
+as approvals quietly doing nothing. That is the failure mode to watch for
+after any Claude Code update, and the reason §2's findings are dated too.
 
 **It fails safe.** Hold expires at 570s, ten seconds inside the limit, and
 returns no decision — the editor then prompts as usual. A closed app, a
