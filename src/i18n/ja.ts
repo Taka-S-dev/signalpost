@@ -12,6 +12,7 @@ export const ja: Dictionary = {
     idle: "待ちなし",
     pending: (n: number) => `${n} 件の承認待ち`,
     withQuestions: (n: number, q: number) => `承認 ${n} 件・質問 ${q} 件`,
+    autoAllowedHint: "ルールにより確認なしで許可した件数（クリックでルール一覧へ）",
   },
   time: { second: "秒", hour: "時間", minute: "分" },
   kind: {

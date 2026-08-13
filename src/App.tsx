@@ -326,6 +326,18 @@ export default function App() {
               ? t.header.pending(pending)
               : t.header.idle}
         </span>
+        {/* What the inbox is not showing you. Rules approve calls with no
+            row and no sound, so the header — which otherwise only counts
+            what arrived — is the one place that number belongs. */}
+        {view === "inbox" && autoAllowed > 0 && (
+          <button
+            className="auto-count"
+            title={t.header.autoAllowedHint}
+            onClick={() => setView("rules")}
+          >
+            ⚑ {autoAllowed}
+          </button>
+        )}
         {/* Always visible while in force, and it expires on its own, so a
             suppression cannot quietly become permanent. */}
         {snoozeRemaining !== null && (
@@ -395,8 +407,9 @@ export default function App() {
             <p>{t.empty.title}</p>
             <p className="note">{t.empty.hint}</p>
             {/* An empty inbox has two causes that look identical: nothing
-                asked, or a rule answered it silently. Saying which, here,
-                is the only place the second one is ever visible. */}
+                asked, or a rule answered it silently. There is room to say
+                which in words here, where the header only has room for a
+                number. */}
             {autoAllowed > 0 && (
               <button className="empty-rules" onClick={() => setView("rules")}>
                 {t.empty.autoAllowed(autoAllowed)}

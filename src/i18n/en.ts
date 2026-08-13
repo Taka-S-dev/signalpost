@@ -15,6 +15,7 @@ export const en = {
     idle: "Nothing waiting",
     pending: (n: number) => `${n} waiting`,
     withQuestions: (n: number, q: number) => `${n} waiting, ${q} asking`,
+    autoAllowedHint: "Approved by rules without asking — click for the rule list",
   },
   time: { second: "s", hour: "h", minute: "m" },
   kind: {

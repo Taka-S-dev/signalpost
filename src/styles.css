@@ -265,6 +265,25 @@ body {
   color: var(--warn);
 }
 
+/* Deliberately dimmer than the waiting count next to it: this number is a
+   record of what needed nothing from you, and must never compete with the
+   one saying something still does. */
+.auto-count {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: none;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.auto-count:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
 .titlebar nav {
   display: flex;
   gap: 4px;
