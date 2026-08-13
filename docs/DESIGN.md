@@ -104,6 +104,37 @@ Read-only, returns each row and how long it has waited. It exists because
 panel, which cannot answer a timing question. The disconnect measurement above
 was made with it.
 
+Unlike the hooks it carries no token. It reports what the panel is already
+showing on screen, and something has to answer without one so that "is the app
+up?" is checkable.
+
+---
+
+## 2b. Who may post to the hooks
+
+Loopback keeps other machines out but not other processes here, so every hook
+URL carries a secret written on first run and kept next to the config. The
+paths in `settings.json` read `/hook/<token>/permission`; anything else is
+answered 404, which tells a caller guessing at the port nothing.
+
+What that is and is not worth, measured 2026-08-13 on a running build:
+
+- **A web page cannot post either way.** The endpoints require
+  `application/json`, which is not a CORS-simple content type, so a browser
+  must preflight — and nothing here answers a preflight. Sending `text/plain`
+  instead is refused with 415. This was already true before the token.
+- **Another account on the machine** reaches loopback but not, normally, the
+  file. "Normally" is doing real work in that sentence: reading the ACL on the
+  machine this was written on found a group some other tool had added with
+  read access, and administrators can always read it.
+- **Code running as the user cannot be kept out.** It can read the token like
+  any other file. The token is not a defence against that and should not be
+  described as one.
+
+A forged request cannot make Claude Code execute anything — answering it
+answers that request and nothing else. What it can do is draw a convincing row
+in a panel people trust at a glance, which is the whole reason for the secret.
+
 ---
 
 ## 3. Answering safely
@@ -206,7 +237,7 @@ So the idea was taken without the identity: scales, no components.
 | paddings | ~25 | 6 |
 | corner radii | 8 | 3 |
 | focus indicators | **0** | ring on `:focus-visible` |
-| control outline contrast | 1.4:1 | 3.8:1 |
+| control outline contrast | 1.4:1 | 3.0:1 |
 
 The panel looked assembled rather than designed because every component had
 brought its own numbers. Scales fixed that; a design system was not required.
@@ -221,9 +252,11 @@ rather than the row the cursor is on. A finished row wears no colour at all.
 Project colours are muted deliberately: naming a project must not outshout the
 amber that means something needs answering.
 
-**Every colour is checked against all four surfaces** — 4.5:1 for text, 3:1 for
-control outlines. Two colours moved a shade to keep the thresholds on the
-brightest surface. Re-measure after any palette change.
+**Every colour is checked against all four surfaces** — 4.5:1 for text, 3:1
+for control outlines. The figures above are the *worst* of the four, which is
+the only number that means anything: quoting the panel background flatters
+every colour, because the selected row is brighter than it. Two colours moved
+a shade to clear the thresholds there. Re-measure after any palette change.
 
 ---
 

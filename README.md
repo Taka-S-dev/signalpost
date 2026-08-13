@@ -191,12 +191,18 @@ Every hook URL carries a secret generated on first run and kept in
 | --- | --- |
 | Another machine | Cannot reach it: the socket is bound to loopback |
 | A web page you visit | Cannot post: the endpoints require `application/json`, so a browser must preflight, and no CORS headers are returned |
-| Another account on this PC | Cannot post: loopback is shared, but the token is not readable from another profile |
+| Another account on this PC | Usually cannot post: loopback is shared, but the token sits in your profile — see the caveat below |
 | Code running as **you** | **Can** post — it can read the token, as it can read anything else of yours |
 
 The last row is the honest limit. A forged request cannot make Claude Code run
 anything: answering it only answers that request. What it could do is put a
 convincing row in the panel, which is why the token exists at all.
+
+The third row depends on your profile's permissions, which are not always what
+Windows set up. Checking the file on the machine this was written on found a
+group with read access that some other tool had added, and an administrator
+can read it regardless. If that matters to you, check with
+`icacls "%APPDATA%\Signalpost\hook-token"` rather than assuming.
 
 A dangerous call cannot become an auto-allow rule. The checkbox is disabled in
 the UI *and* the backend refuses, so the invariant does not rest on the
