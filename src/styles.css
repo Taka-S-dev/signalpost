@@ -15,11 +15,33 @@
   --ok: #7dcfa0;
   --danger: #f2707f;
   --warn: #e8c07d;
-  --radius: 8px;
+
+  /* Type, space and radius are scales, not free numbers. Ten font sizes and
+     eight corner radii had accumulated one component at a time, which is
+     what made the panel look assembled rather than designed. Anything new
+     picks a step; if none fits, the scale is wrong, not the component. */
+  --text-xs: 10.5px; /* badges, counts, footnotes */
+  --text-sm: 11px; /* buttons, secondary text */
+  --text-md: 12px; /* row titles, controls */
+  --text-lg: 13px; /* the panel's base size */
+  --text-xl: 15px; /* headings and glyphs */
+
+  --space-0: 2px; /* inside a chip, where 4px would double its height */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+
+  --radius-sm: 4px; /* controls: buttons, fields, chips */
+  --radius-md: 8px; /* surfaces: the panel, rows, overlays */
+  --radius-pill: 999px;
+  /* Kept: the window frame's radius is read from JS as well. */
+  --radius: var(--radius-md);
 
   color-scheme: dark;
   font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 13px;
+  font-size: var(--text-lg);
   color: var(--text);
 }
 
@@ -98,9 +120,11 @@ body {
 .app.compact {
   flex-direction: row;
   align-items: center;
-  border-radius: 19px;
-  padding-left: 4px;
-  /* Transparent breathing room so the arrival glow is not clipped. */
+  border-radius: var(--radius-pill);
+  padding-left: var(--space-1);
+  /* Off the scale on purpose: this is transparent breathing room sized
+     against the bar's native window, whose dimensions live in Rust, not
+     spacing between things on screen. */
   margin: 10px 11px;
   height: calc(100% - 20px);
   overflow: visible;
@@ -153,8 +177,8 @@ body {
   align-self: stretch;
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  font-size: 11px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
   line-height: 1;
   color: var(--line);
   cursor: grab;
@@ -163,15 +187,15 @@ body {
 .pill {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
   height: 100%;
-  padding: 0 11px 0 4px;
+  padding: 0 var(--space-4) 0 var(--space-1);
   border: none;
   border-radius: inherit;
   background: none;
-  font-size: 12px;
+  font-size: var(--text-md);
   cursor: pointer;
 }
 
@@ -222,24 +246,24 @@ body {
 
 .pill-more {
   flex: none;
-  padding: 0 5px;
-  border-radius: 8px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
   background: var(--bg-sunken);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
 .pill-age {
   flex: 1;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--text-sm);
   text-align: right;
   color: var(--text-dim);
 }
 
 .pill-open {
   flex: none;
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
@@ -249,8 +273,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--bg-raised);
   border-bottom: 1px solid var(--line);
 }
@@ -272,11 +296,11 @@ body {
    one saying something still does. */
 .auto-count {
   flex: none;
-  padding: 1px 6px;
+  padding: var(--space-0) var(--space-2);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
   background: none;
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -288,13 +312,13 @@ body {
 
 .titlebar nav {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .titlebar nav button {
   flex: none;
-  padding: 4px 7px;
+  padding: var(--space-1) var(--space-2);
   white-space: nowrap;
 }
 
@@ -307,12 +331,12 @@ body {
   height: 22px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: none;
   color: var(--text-dim);
   /* The glyph is a bare dash: only weight and width make it read as a
      control rather than punctuation. */
-  font-size: 15px;
+  font-size: var(--text-xl);
   line-height: 1;
 }
 
@@ -322,7 +346,7 @@ body {
 }
 
 .nav-icon {
-  font-size: 11px;
+  font-size: var(--text-sm);
   line-height: 1;
 }
 
@@ -348,15 +372,15 @@ body {
 .list {
   flex: 1;
   margin: 0;
-  padding: 6px;
+  padding: var(--space-2);
   list-style: none;
   overflow-y: auto;
 }
 
 .row {
-  padding: 9px 10px;
-  margin-bottom: 4px;
-  border-radius: 6px;
+  padding: var(--space-3) var(--space-3);
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-md);
   border-left: 3px solid transparent;
   background: var(--bg-raised);
   cursor: default;
@@ -424,7 +448,7 @@ body {
 .row-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-3);
 }
 
 .project {
@@ -438,7 +462,7 @@ body {
 
 .projects {
   flex: 1;
-  padding: 14px;
+  padding: var(--space-4);
   overflow-y: auto;
 }
 
@@ -449,27 +473,27 @@ body {
 }
 
 .projects li {
-  padding: 10px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .project-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-3);
 }
 
 .swatch {
   flex: none;
   width: 12px;
   height: 12px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .swatches {
   display: flex;
-  gap: 5px;
-  margin-top: 8px;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
 }
 
 .swatch.pick {
@@ -491,7 +515,7 @@ body {
 }
 
 .link {
-  padding: 2px 4px;
+  padding: var(--space-0) var(--space-1);
   border: none;
   background: none;
   font-weight: 600;
@@ -502,9 +526,9 @@ body {
 
 .rename {
   flex: 1;
-  padding: 3px 6px;
+  padding: var(--space-0) var(--space-2);
   border: 1px solid var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font: inherit;
@@ -512,15 +536,15 @@ body {
 
 .reset {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 
 .command {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 10px;
-  font-size: 12px;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  font-size: var(--text-md);
 }
 
 .command > span {
@@ -529,44 +553,44 @@ body {
 }
 
 .command em {
-  margin-top: 2px;
-  font-size: 11px;
+  margin-top: var(--space-0);
+  font-size: var(--text-sm);
   font-style: normal;
   color: var(--text-dim);
 }
 
 .command input {
-  padding: 5px 7px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
 }
 
 .presets {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .presets button {
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 
 /* Windows view ------------------------------------------------------------ */
 
 .windows {
   flex: 1;
-  padding: 14px;
+  padding: var(--space-4);
   overflow-y: auto;
 }
 
 .windows-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .windows-head h2 {
@@ -583,10 +607,10 @@ body {
 .window-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-3);
   width: 100%;
-  margin-bottom: 4px;
-  padding: 8px 9px;
+  margin-bottom: var(--space-1);
+  padding: var(--space-3) var(--space-3);
   border-color: transparent;
   background: var(--bg-raised);
   text-align: left;
@@ -623,12 +647,12 @@ body {
 
 .state {
   flex: none;
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
 h2.secondary {
-  margin-top: 16px;
+  margin-top: var(--space-5);
   color: var(--text-dim);
 }
 
@@ -641,9 +665,9 @@ h2.secondary {
 
 .tag {
   flex: none;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 10.5px;
+  padding: var(--space-0) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   background: var(--bg-sunken);
 }
 
@@ -656,9 +680,9 @@ h2.secondary {
 }
 
 .path {
-  margin: 3px 0 0;
+  margin: var(--space-0) 0 0;
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -666,16 +690,16 @@ h2.secondary {
 }
 
 .badge {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--text-dim);
 }
 
 .agent {
   flex: none;
-  padding: 0 5px;
+  padding: 0 var(--space-1);
   border: 1px solid var(--line);
-  border-radius: 3px;
-  font-size: 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
@@ -683,26 +707,26 @@ h2.secondary {
    again. */
 .repeat {
   flex: none;
-  padding: 0 5px;
-  border-radius: 8px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
   background: var(--bg-sunken);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
 .elapsed {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--text-dim);
 }
 
 .row-body {
   display: flex;
-  gap: 6px;
-  margin-top: 3px;
+  gap: var(--space-2);
+  margin-top: var(--space-0);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--text-md);
   color: var(--text-dim);
   overflow: hidden;
 }
@@ -719,11 +743,11 @@ h2.secondary {
 }
 
 .nav-count {
-  padding: 0 4px;
-  border-radius: 8px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
   background: var(--warn);
   color: #14161a;
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
 
@@ -731,9 +755,9 @@ h2.secondary {
 
 .risk {
   flex: none;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 10.5px;
+  padding: var(--space-0) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -773,12 +797,12 @@ h2.secondary {
 
 .detail {
   max-height: 190px;
-  margin: 8px 0 0;
-  padding: 8px;
-  border-radius: 5px;
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--text-dim);
   white-space: pre-wrap;
@@ -790,8 +814,8 @@ h2.secondary {
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 9px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 /* Creating a standing rule is a separate, deliberate act, so it reads as a
@@ -799,15 +823,15 @@ h2.secondary {
 .remember {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  margin-top: 9px;
-  font-size: 11.5px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
   color: var(--text-dim);
   cursor: pointer;
 }
 
 .remember input {
-  margin-top: 1px;
+  margin-top: var(--space-0);
   width: 13px;
   height: 13px;
   accent-color: var(--warn);
@@ -819,41 +843,41 @@ h2.secondary {
 }
 
 .remember em {
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   font-style: normal;
   color: var(--danger);
 }
 
 .remember-scope {
   width: 100%;
-  margin-top: 5px;
-  padding: 4px 6px;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--warn);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font: inherit;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
 }
 
 /* Monospace and full width: what goes in here is compared against a command
    character by character, so it has to be read that way. */
 .remember-prefix {
   width: 100%;
-  margin-top: 5px;
-  padding: 4px 6px;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--warn);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
 }
 
 /* Quiet: it is reassurance, not part of the decision. */
 .remember-note {
-  margin: 4px 0 0;
-  font-size: 10.5px;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
   line-height: 1.45;
   color: var(--text-dim);
 }
@@ -861,12 +885,12 @@ h2.secondary {
 /* Loud enough to stop the hand on its way to Y, quiet enough that it is not
    mistaken for the call itself being dangerous. */
 .remember-warn {
-  margin-top: 6px;
-  padding: 6px 8px;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--warn);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: rgb(232 192 125 / 0.1);
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--text-dim);
 }
@@ -882,7 +906,7 @@ h2.secondary {
 /* The way back out. Dimmer than the consequence above it, because it is only
    worth reading once the consequence has landed. */
 .warn-undo {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   opacity: 0.8;
 }
 
@@ -901,20 +925,20 @@ h2.secondary {
 .actions.decide button {
   flex: 1;
   justify-content: center;
-  padding: 8px 10px;
-  font-size: 13px;
+  padding: var(--space-3) var(--space-3);
+  font-size: var(--text-lg);
   font-weight: 600;
 }
 
 /* Everything else is a variation, including the two that create a rule —
    those especially should not be as easy to hit as the one-off answer. */
 .actions.minor {
-  margin-top: 6px;
+  margin-top: var(--space-2);
 }
 
 .actions.minor button {
-  padding: 3px 7px;
-  font-size: 11px;
+  padding: var(--space-0) var(--space-2);
+  font-size: var(--text-sm);
   color: var(--text-dim);
 }
 
@@ -927,14 +951,14 @@ h2.secondary {
 button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 9px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-md);
   cursor: pointer;
 }
 
@@ -958,12 +982,12 @@ button.on {
 }
 
 kbd {
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
 
@@ -973,7 +997,7 @@ kbd {
 .setup,
 .rules {
   flex: 1;
-  padding: 16px 14px;
+  padding: var(--space-5) var(--space-4);
   overflow-y: auto;
 }
 
@@ -986,7 +1010,7 @@ kbd {
 }
 
 .empty-mark {
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   font-size: 26px;
   color: var(--ok);
 }
@@ -994,12 +1018,12 @@ kbd {
 /* Reads as a line of text until pointed at, because it is a footnote about
    a quiet inbox, not something asking to be dealt with. */
 .empty-rules {
-  margin-top: 12px;
-  padding: 3px 8px;
+  margin-top: var(--space-4);
+  padding: var(--space-0) var(--space-3);
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: none;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--text-dim);
 }
 
@@ -1015,8 +1039,8 @@ kbd {
 .slider {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
 }
@@ -1026,13 +1050,13 @@ kbd {
   display: flex;
   flex-direction: column;
   flex: 1;
-  font-size: 12.5px;
+  font-size: var(--text-md);
 }
 
 .toggle em,
 .slider em {
-  margin-top: 2px;
-  font-size: 11px;
+  margin-top: var(--space-0);
+  font-size: var(--text-sm);
   font-style: normal;
   color: var(--text-dim);
 }
@@ -1054,14 +1078,14 @@ kbd {
   flex: none;
   width: 38px;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--text-sm);
   text-align: right;
   color: var(--text-dim);
 }
 
 h2 {
-  margin: 0 0 10px;
-  font-size: 14px;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
 }
 
 /* The settings screen is one long scroll of unrelated groups. Without a
@@ -1069,39 +1093,41 @@ h2 {
    whole thing runs together. */
 .setup h2:not(:first-child),
 .rules h2:not(:first-child) {
-  margin-top: 22px;
-  padding-top: 14px;
+  /* The gap that separates the two lists on the rules screen. Larger than
+     the largest step because it is dividing sections, not spacing them. */
+  margin-top: calc(var(--space-5) + var(--space-2));
+  padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
 
 /* Status lines and outcomes are answers, not prose. */
 .setup .status {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
   font-weight: 600;
 }
 
 .setup > button,
 .setup .actions {
-  margin-top: 10px;
+  margin-top: var(--space-3);
 }
 
 /* A path in an error has to be readable and selectable, not wrapped mid-word
    as if it were a sentence. */
 .setup .note:last-child {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .note {
-  margin: 8px 0;
-  font-size: 12px;
+  margin: var(--space-3) 0;
+  font-size: var(--text-md);
   line-height: 1.7;
   color: var(--text-dim);
   user-select: text;
 }
 
 .note code {
-  padding: 1px 4px;
-  border-radius: 3px;
+  padding: var(--space-0) var(--space-1);
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   font-family: "Cascadia Mono", Consolas, monospace;
 }
@@ -1123,19 +1149,19 @@ h2 {
 .rules li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .rules-actions {
   display: flex;
-  gap: 6px;
-  margin: 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
 }
 
 .risk-list li {
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .risk-list li.off {
@@ -1152,9 +1178,9 @@ h2 {
 .icon-field {
   flex: none;
   width: 30px;
-  padding: 3px;
+  padding: var(--space-0);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font: inherit;
@@ -1170,41 +1196,41 @@ h2 {
 
 .risk-text code {
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .risk-text em {
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   font-style: normal;
   color: var(--text-dim);
 }
 
 .risk-list select {
   flex: none;
-  padding: 3px;
+  padding: var(--space-0);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-sunken);
   color: var(--text);
   font: inherit;
-  font-size: 11px;
+  font-size: var(--text-sm);
 }
 
 .rule-label {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0);
   /* Without this a long tool signature stops the ellipsis working. */
   min-width: 0;
 }
 
 .rule-what {
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
+  font-size: var(--text-sm);
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1212,7 +1238,7 @@ h2 {
 }
 
 .rule-label em {
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   font-style: normal;
   color: var(--text-dim);
   opacity: 0.75;
@@ -1229,27 +1255,27 @@ h2 {
 
 .snoozed {
   flex: none;
-  padding: 2px 7px;
+  padding: var(--space-0) var(--space-2);
   border-color: var(--warn);
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--warn);
 }
 
 .clear-all {
   margin-left: auto;
-  padding: 2px 7px;
-  font-size: 11px;
+  padding: var(--space-0) var(--space-2);
+  font-size: var(--text-sm);
 }
 
 .undo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-3);
   margin: 0;
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--warn);
   background: rgb(232 192 125 / 0.12);
-  font-size: 11.5px;
+  font-size: var(--text-sm);
   color: var(--warn);
 }
 
@@ -1259,11 +1285,11 @@ h2 {
 
 .failure {
   margin: 0;
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--danger);
   background: rgb(242 112 127 / 0.12);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--danger);
   cursor: pointer;
   user-select: text;
@@ -1275,10 +1301,10 @@ h2 {
 .hints {
   display: flex;
   justify-content: flex-end;
-  padding: 7px 12px;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--line);
   background: var(--bg-raised);
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--text-dim);
 }
 
@@ -1289,9 +1315,9 @@ h2 {
   inset: 0;
   z-index: 5;
   overflow-y: auto;
-  padding: 16px 18px;
+  padding: var(--space-5) var(--space-5);
   background: rgb(16 18 22 / 0.97);
-  font-size: 11.5px;
+  font-size: var(--text-sm);
 }
 
 .keys dl {
@@ -1299,7 +1325,7 @@ h2 {
   /* The keys column is as wide as its widest key and no wider, so every
      description starts at the same place and the list reads down. */
   grid-template-columns: max-content 1fr;
-  gap: 7px 12px;
+  gap: var(--space-2) var(--space-4);
   margin: 0;
 }
 
@@ -1313,8 +1339,8 @@ h2 {
 }
 
 .keys .note {
-  margin: 16px 0 0;
+  margin: var(--space-5) 0 0;
   text-align: center;
-  font-size: 10.5px;
+  font-size: var(--text-xs);
   color: var(--text-dim);
 }
