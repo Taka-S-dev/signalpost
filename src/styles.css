@@ -1,0 +1,1096 @@
+/* A heads-up panel: dense, dark, and readable at a glance from across a desk. */
+
+:root {
+  /* Backgrounds carry the user's opacity; everything else stays solid so a
+     translucent panel is still legible over whatever is behind it. */
+  --alpha: 1;
+  --bg: rgb(20 22 26 / var(--alpha));
+  --bg-raised: rgb(27 30 36 / var(--alpha));
+  --bg-selected: rgb(35 40 51 / var(--alpha));
+  --bg-sunken: rgb(15 17 20 / var(--alpha));
+  --line: #2c313b;
+  --text: #e6e9ef;
+  --text-dim: #9aa3b2;
+  --accent: #7aa2f7;
+  --ok: #7dcfa0;
+  --danger: #f2707f;
+  --warn: #e8c07d;
+  --radius: 8px;
+
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  /* The window itself is transparent; the panel paints its own background. */
+  background: transparent;
+  user-select: none;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+  border: 1px solid var(--frame, var(--line));
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 180ms ease, border-color 180ms ease;
+  /* Switching shape resizes a native window and swaps the layout; a short
+     fade covers the frame or two where those do not land together. */
+  animation: appear 140ms ease-out;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A chosen frame is the panel's edge against an arbitrary background, so it
+   gets real weight and a halo that separates it from whatever is behind. */
+:root.framed .app {
+  border-width: 2px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 6px 20px rgb(0 0 0 / 0.4);
+}
+
+/* The pulse must still win over the frame while it lasts. */
+:root.framed .app.pulse-arrived,
+:root.framed .app.pulse-cleared {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), 0 6px 20px rgb(0 0 0 / 0.4),
+    inset 0 0 0 1px currentColor;
+}
+
+/* The acknowledgement that replaces the panel disappearing. */
+.app.pulse-arrived {
+  border-color: var(--warn);
+  box-shadow: inset 0 0 0 1px var(--warn);
+}
+
+.app.pulse-cleared {
+  border-color: var(--ok);
+  box-shadow: inset 0 0 0 1px var(--ok);
+}
+
+/* Compact mode ------------------------------------------------------------ */
+
+/* Shaped as its own thing rather than a shrunken panel: fully rounded ends,
+   one row of content, no chrome borrowed from the full view. */
+.app.compact {
+  flex-direction: row;
+  align-items: center;
+  border-radius: 19px;
+  padding-left: 4px;
+  /* Transparent breathing room so the arrival glow is not clipped. */
+  margin: 10px 11px;
+  height: calc(100% - 20px);
+  overflow: visible;
+}
+
+/* The full panel can announce an arrival with a border pulse because it is
+   large. The bar has almost no edge to light up, and on a dark desktop a thin
+   outline is exactly what gets missed — so the whole strip flashes, twice, and
+   the glow extends past it. */
+.app.compact.pulse-arrived {
+  border-color: var(--warn);
+  animation: bar-alert 1.1s ease-out;
+}
+
+.app.compact.pulse-cleared {
+  border-color: var(--ok);
+  animation: bar-done 1.1s ease-out;
+}
+
+@keyframes bar-alert {
+  0%,
+  30%,
+  60%,
+  100% {
+    background: var(--bg);
+    box-shadow: none;
+  }
+  12%,
+  45% {
+    background: rgb(232 192 125 / 0.3);
+    box-shadow: 0 0 0 2px var(--warn), 0 0 22px rgb(232 192 125 / 0.55);
+  }
+}
+
+@keyframes bar-done {
+  0%,
+  100% {
+    background: var(--bg);
+    box-shadow: none;
+  }
+  25% {
+    background: rgb(125 207 160 / 0.26);
+    box-shadow: 0 0 0 2px var(--ok), 0 0 20px rgb(125 207 160 / 0.5);
+  }
+}
+
+/* Wide enough to aim at, and deliberately outside the hover-to-open area. */
+.pill-grip {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--line);
+  cursor: grab;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 11px 0 4px;
+  border: none;
+  border-radius: inherit;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pill:hover {
+  background: var(--bg-selected);
+}
+
+/* The project's colour, so which session it is registers before the name. */
+.pill-mark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Nothing queued still gets a mark, so the bar keeps its shape. */
+.pill-mark.idle {
+  background: var(--line);
+}
+
+.pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.pill.is-hot .pill-label {
+  color: var(--warn);
+}
+
+/* Left alone for minutes: the bar starts breathing. Slow enough not to nag,
+   and it is the only thing on screen when the panel is closed. */
+.pill.is-stale {
+  animation: bar-waiting 2.6s ease-in-out infinite;
+  border-radius: inherit;
+}
+
+@keyframes bar-waiting {
+  0%,
+  100% {
+    background: transparent;
+  }
+  50% {
+    background: rgb(232 192 125 / 0.18);
+  }
+}
+
+.pill-more {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.pill-age {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.pill-open {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Titlebar ---------------------------------------------------------------- */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line);
+}
+
+.count {
+  flex: none;
+  font-weight: 600;
+  /* Wrapping the header turns a one-line titlebar into a three-line one. */
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.count.is-hot {
+  color: var(--warn);
+}
+
+.titlebar nav {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.titlebar nav button {
+  flex: none;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+
+.nav-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* Below this width the labels stop fitting; the shortcut key — or the inbox
+   icon — still identifies each tab. */
+@media (max-width: 400px) {
+  .titlebar nav button .label {
+    display: none;
+  }
+}
+
+/* With labels, the icon would only repeat what the word already says. */
+@media (min-width: 401px) {
+  .nav-icon {
+    display: none;
+  }
+}
+
+/* List -------------------------------------------------------------------- */
+
+.list {
+  flex: 1;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.row {
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  background: var(--bg-raised);
+  cursor: default;
+}
+
+/* The left bar is the project's colour, so a row is recognisable before any
+   of its text is read. */
+.row.is-selected {
+  background: var(--bg-selected);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.row.kind-permission .badge {
+  color: var(--warn);
+}
+
+/* A question is also a stopped session, so it reads as something owed rather
+   than as another grey notice next to the finished turns. */
+.row.kind-needsInput .badge {
+  color: var(--accent);
+}
+
+.row.kind-needsInput {
+  border-left-style: dashed;
+}
+
+/* How long something has been waiting, made readable without reading.
+   `--heat` climbs from 0 to 1 over ten minutes, so the list shows at a glance
+   which row has been left alone. */
+.row.kind-permission {
+  background:
+    linear-gradient(
+      rgb(232 192 125 / calc(var(--heat, 0) * 0.14)),
+      rgb(232 192 125 / calc(var(--heat, 0) * 0.14))
+    ),
+    var(--bg-raised);
+}
+
+/* Past a few minutes it also breathes. A gradient alone is invisible in
+   peripheral vision; movement is what actually catches the eye, and this is
+   the row that has been ignored longest. */
+.row.is-stale {
+  animation: waiting 2.6s ease-in-out infinite;
+}
+
+@keyframes waiting {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px rgb(232 192 125 / 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1px rgb(232 192 125 / 0.55);
+  }
+}
+
+.elapsed.is-stale {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.row.kind-completed {
+  opacity: 0.72;
+}
+
+.row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.project {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Projects view ----------------------------------------------------------- */
+
+.projects {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.projects ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projects li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.project-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.swatches {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.swatch.pick {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.swatch.pick.on {
+  border-color: var(--text);
+}
+
+/* "No frame" needs to read as an option rather than a missing swatch. */
+.swatch.pick.none {
+  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.link {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline dotted var(--text-dim);
+  cursor: text;
+}
+
+.rename {
+  flex: 1;
+  padding: 3px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+}
+
+.reset {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.command {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.command > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.command em {
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-dim);
+}
+
+.command input {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.presets {
+  display: flex;
+  gap: 6px;
+}
+
+.presets button {
+  font-size: 11px;
+}
+
+/* Windows view ------------------------------------------------------------ */
+
+.windows {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.windows-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.windows-head h2 {
+  flex: 1;
+  margin: 0;
+}
+
+.windows ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.window-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 8px 9px;
+  border-color: transparent;
+  background: var(--bg-raised);
+  text-align: left;
+}
+
+.window-row:hover {
+  border-color: var(--accent);
+}
+
+/* Session rows carry the project colour on their left edge, matching the
+   inbox, so the same project is recognisable in both views. */
+.window-row[style*="border-left-color"] {
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+.mark {
+  flex: none;
+  width: 14px;
+  text-align: center;
+}
+
+.session-running .mark {
+  color: var(--accent);
+}
+
+.session-waiting .mark {
+  color: var(--warn);
+}
+
+.session-idle {
+  opacity: 0.66;
+}
+
+.state {
+  flex: none;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+h2.secondary {
+  margin-top: 16px;
+  color: var(--text-dim);
+}
+
+.window-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  background: var(--bg-sunken);
+}
+
+.tag-editor {
+  color: var(--accent);
+}
+
+.tag-terminal {
+  color: var(--ok);
+}
+
+.path {
+  margin: 3px 0 0;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.agent {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.elapsed {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.row-body {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+}
+
+.tool {
+  color: var(--accent);
+  flex: none;
+}
+
+.summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-count {
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--warn);
+  color: #14161a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Risk marks -------------------------------------------------------------- */
+
+.risk {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.risk-danger .risk {
+  background: rgb(242 112 127 / 0.16);
+  color: var(--danger);
+}
+
+.risk-caution .risk {
+  background: rgb(232 192 125 / 0.16);
+  color: var(--warn);
+}
+
+/* A tint rather than a border: the left edge already means "which project". */
+.row.risk-danger {
+  background: rgb(242 112 127 / 0.07);
+}
+
+.row.risk-danger.is-selected {
+  background: rgb(242 112 127 / 0.13);
+}
+
+.detail .line {
+  display: block;
+}
+
+.detail .line.del {
+  color: var(--danger);
+  background: rgb(242 112 127 / 0.08);
+}
+
+.detail .line.add {
+  color: var(--ok);
+  background: rgb(125 207 160 / 0.08);
+}
+
+.detail {
+  max-height: 190px;
+  margin: 8px 0 0;
+  padding: 8px;
+  border-radius: 5px;
+  background: var(--bg-sunken);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
+  user-select: text;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+/* Creating a standing rule is a separate, deliberate act, so it reads as a
+   choice made before answering rather than an alternative way to answer. */
+.remember {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.remember input {
+  margin-top: 1px;
+  width: 13px;
+  height: 13px;
+  accent-color: var(--warn);
+}
+
+.remember.blocked {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.remember em {
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--danger);
+}
+
+.remember-scope {
+  width: 100%;
+  margin-top: 5px;
+  padding: 4px 6px;
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+/* The answer itself: wide targets, full weight. */
+.actions.decide button {
+  flex: 1;
+  justify-content: center;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Everything else is a variation, including the two that create a rule —
+   those especially should not be as easy to hit as the one-off answer. */
+.actions.minor {
+  margin-top: 6px;
+}
+
+.actions.minor button {
+  padding: 3px 7px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.actions.minor button:hover {
+  color: var(--text);
+}
+
+/* Buttons ----------------------------------------------------------------- */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--text-dim);
+}
+
+button.primary {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+kbd {
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg-sunken);
+  font-family: inherit;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Panels ------------------------------------------------------------------ */
+
+.empty,
+.setup,
+.rules {
+  flex: 1;
+  padding: 16px 14px;
+  overflow-y: auto;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.empty-mark {
+  margin: 0 0 4px;
+  font-size: 26px;
+  color: var(--ok);
+}
+
+/* Settings controls -------------------------------------------------------- */
+
+.toggle,
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.toggle span,
+.slider span {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-size: 12.5px;
+}
+
+.toggle em,
+.slider em {
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-dim);
+}
+
+.toggle input {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.slider input {
+  flex: none;
+  width: 96px;
+  accent-color: var(--accent);
+}
+
+.slider output {
+  flex: none;
+  width: 38px;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.note {
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  user-select: text;
+}
+
+.note code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-sunken);
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.status.ok {
+  color: var(--ok);
+}
+
+.status.warn {
+  color: var(--warn);
+}
+
+.rules ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rules-actions {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.risk-list li {
+  gap: 6px;
+}
+
+.risk-list li.off {
+  opacity: 0.45;
+}
+
+.risk-list input[type="checkbox"] {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+}
+
+.icon-field {
+  flex: none;
+  width: 30px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+}
+
+.risk-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.risk-text code {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk-text em {
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--text-dim);
+}
+
+.risk-list select {
+  flex: none;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+}
+
+.rule-label {
+  flex: 1;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Footer ------------------------------------------------------------------ */
+
+.snoozed {
+  flex: none;
+  padding: 2px 7px;
+  border-color: var(--warn);
+  font-size: 11px;
+  color: var(--warn);
+}
+
+.clear-all {
+  margin-left: auto;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.undo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 12px;
+  border-top: 1px solid var(--warn);
+  background: rgb(232 192 125 / 0.12);
+  font-size: 11.5px;
+  color: var(--warn);
+}
+
+.undo span {
+  flex: 1;
+}
+
+.failure {
+  margin: 0;
+  padding: 7px 12px;
+  border-top: 1px solid var(--danger);
+  background: rgb(242 112 127 / 0.12);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  color: var(--danger);
+  cursor: pointer;
+  user-select: text;
+  word-break: break-all;
+}
+
+.hints {
+  display: flex;
+  gap: 12px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-raised);
+  font-size: 11px;
+  color: var(--text-dim);
+}

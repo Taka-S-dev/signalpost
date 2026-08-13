@@ -1,0 +1,457 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
+import {
+  api,
+  DEFAULT_SETTINGS,
+  type Decision,
+  type HookStatus,
+  type Scope,
+  type Settings,
+} from "./api";
+import { dictionary, I18nContext } from "./i18n";
+import { ItemRow } from "./components/ItemRow";
+import { Pill } from "./components/Pill";
+import { ProjectsView } from "./components/ProjectsView";
+import { RulesView } from "./components/RulesView";
+import { SessionsView } from "./components/SessionsView";
+import { Setup } from "./components/Setup";
+import { useInbox, useTick } from "./useInbox";
+import "./styles.css";
+
+type View = "inbox" | "windows" | "projects" | "rules" | "setup";
+
+/// Hooks are loaded when a session starts, so a hook arriving *after* the
+/// config was written is the only proof they are in effect.
+function isLive(status: HookStatus): boolean {
+  if (!status.installed || status.lastHookAt === null) return false;
+  return status.installedAt === null || status.lastHookAt >= status.installedAt;
+}
+
+export default function App() {
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const { items, selected, selectedId, setSelectedId, move, pulse } = useInbox(settings);
+  const [view, setView] = useState<View>("inbox");
+  const [installed, setInstalled] = useState(true);
+  const [live, setLive] = useState(true);
+  const [autoSetup, setAutoSetup] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
+  const [mode, setMode] = useState<"full" | "pill">("full");
+  const [port, setPort] = useState(8787);
+  const [shortcut, setShortcut] = useState<string | null>(null);
+  useTick();
+
+  useEffect(() => {
+    void api.getSettings().then(setSettings);
+    void api.getSnooze().then(setSnoozeUntil);
+    void api.getMode().then(setMode);
+    void api.activeShortcut().then(setShortcut);
+    const snooze = listen<number | null>("snooze:changed", (e) => setSnoozeUntil(e.payload));
+    // The window is resized by Rust, so the layout follows rather than leads.
+    const modeEvent = listen<"full" | "pill">("mode:changed", (e) => setMode(e.payload));
+    void api.serverPort().then(setPort);
+    void api.hooksStatus().then((status) => {
+      setInstalled(status.installed);
+      setLive(isLive(status));
+      if (!status.installed) {
+        setView("setup");
+        setAutoSetup(true);
+      }
+    });
+    return () => {
+      void snooze.then((un) => un());
+      void modeEvent.then((un) => un());
+    };
+  }, []);
+
+  // The check reads `~/.claude/settings.json`, which the user may have wired
+  // up by hand or from another home. Rows actually arriving is the stronger
+  // evidence, and they must never be hidden behind a setup screen.
+  useEffect(() => {
+    if (autoSetup && items.length > 0) {
+      setView("inbox");
+      setAutoSetup(false);
+    }
+  }, [autoSetup, items.length]);
+
+  // Which row, if any, the user ticked "remember this" on. Cleared as soon as
+  // the row is answered, so the choice can never leak onto the next call.
+  const [remember, setRemember] = useState<{ id: string; scope: Scope } | null>(null);
+  const [undo, setUndo] = useState<string | null>(null);
+
+  const resolve = useCallback(
+    (decision: Decision, scope?: Scope) => {
+      if (selected?.kind !== "permission") return;
+      const applied =
+        scope ?? (remember?.id === selected.id ? remember.scope : undefined);
+      void api.resolve(selected.id, decision, applied).then((outcome) => {
+        // A standing rule made with no acknowledgement and no way back reads
+        // as irreversible, so it is offered back immediately.
+        if (outcome.ruleAdded) {
+          setUndo(outcome.ruleLabel ?? "");
+          window.setTimeout(() => setUndo(null), 10000);
+        }
+      });
+      setRemember(null);
+    },
+    [selected, remember],
+  );
+
+  const dismiss = useCallback(() => {
+    if (selected) void api.dismiss(selected.id);
+  }, [selected]);
+
+  const openEditor = useCallback(() => {
+    if (!selected) return;
+    const item = selected;
+    setError(null);
+    api
+      .focusEditor(item.id)
+      .then(() => {
+        // A blocked call still needs an answer after the detour; an
+        // informational row is done the moment the window is in front.
+        if (item.kind !== "permission") void api.dismiss(item.id);
+      })
+      // Swallowing this made a failed jump indistinguishable from a working
+      // one that focused nothing.
+      .catch((e) => setError(String(e)));
+  }, [selected]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      // Renaming a project means typing letters that are otherwise shortcuts.
+      if (event.target instanceof HTMLInputElement) return;
+
+      if (event.key === "Escape") {
+        if (view === "inbox") void api.hidePanel();
+        else setView("inbox");
+        return;
+      }
+      if (event.key === "r") {
+        setView((v) => (v === "rules" ? "inbox" : "rules"));
+        return;
+      }
+      if (event.key === "s") {
+        setView((v) => (v === "setup" ? "inbox" : "setup"));
+        return;
+      }
+      if (event.key === "p") {
+        setView((v) => (v === "projects" ? "inbox" : "projects"));
+        return;
+      }
+      if (event.key === "w") {
+        setView((v) => (v === "windows" ? "inbox" : "windows"));
+        return;
+      }
+      if (event.key === "m") {
+        void api.toggleSnooze().then(setSnoozeUntil);
+        return;
+      }
+      if (event.key === "c") {
+        void api.collapsePanel();
+        return;
+      }
+      if (view !== "inbox" || !selected) return;
+
+      switch (event.key) {
+        case "j":
+        case "ArrowDown":
+          move(1);
+          break;
+        case "k":
+        case "ArrowUp":
+          move(-1);
+          break;
+        case "y":
+          resolve("allow");
+          break;
+        case "n":
+          resolve("deny");
+          break;
+        // No key creates a rule. `A` next to `Y` meant one slip could make a
+        // call permanent; the checkbox on the row is the only way now.
+        case "d":
+          dismiss();
+          break;
+        case "D":
+          void api.dismissAll();
+          break;
+        case "Enter":
+          openEditor();
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view, selected, move, resolve, dismiss, openEditor]);
+
+  const t = useMemo(() => dictionary(settings.lang), [settings.lang]);
+
+  // Pointing at the bar opens it. Closing again is watched natively against
+  // the OS cursor: a DOM leave also fires when a native tooltip opens over a
+  // button, which was closing the panel on hover.
+  const hoverTimer = useRef<number | undefined>(undefined);
+
+  const cancelPeek = useCallback(() => {
+    window.clearTimeout(hoverTimer.current);
+  }, []);
+
+  const peek = useCallback(() => {
+    cancelPeek();
+    // Long enough that a cursor merely crossing the bar does not open it.
+    hoverTimer.current = window.setTimeout(() => void api.expandPanel(true), 350);
+  }, [cancelPeek]);
+
+  /// Typing is the one case where it must not close on its own. Clicking
+  /// anything else changes nothing: the pointer leaving is the whole signal,
+  /// and pinning turned a window opened by hovering into one that had to be
+  /// closed by hand.
+  useEffect(() => {
+    const onFocus = (event: FocusEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches?.("input, select, textarea")) void api.pinPanel();
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, []);
+
+  // It opens, you deal with it, it gets out of the way.
+  //
+  // The trigger is the queue *draining*, not the queue *being empty*: opening
+  // an already-empty panel on purpose was being collapsed straight back out
+  // from under the user. Only clearing the last row earns the collapse.
+  const previousCount = useRef(items.length);
+  useEffect(() => {
+    const drained = previousCount.current > 0 && items.length === 0;
+    previousCount.current = items.length;
+
+    if (!drained || mode !== "full" || view !== "inbox") return;
+    if (settings.autoHide) return;
+    // Long enough for the "cleared" flash to register first.
+    const timer = setTimeout(() => void api.collapsePanel(), 900);
+    return () => clearTimeout(timer);
+  }, [items.length, mode, view, settings.autoHide]);
+
+  // Only the background layers take the alpha; text and borders stay opaque
+  // so a translucent panel is still readable over busy windows.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--alpha", String(settings.opacity));
+  }, [settings.opacity]);
+
+  // The default outline is nearly the same value as a dark desktop, so once
+  // the panel is translucent its edge disappears. A chosen colour is drawn
+  // fully opaque and thicker, which is what makes the boundary readable.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.border) {
+      root.style.setProperty("--frame", settings.border);
+    } else {
+      root.style.removeProperty("--frame");
+    }
+    root.classList.toggle("framed", Boolean(settings.border));
+  }, [settings.border]);
+
+  // The tray is outside the web view and cannot read the dictionary itself.
+  useEffect(() => {
+    void api.setTrayStrings(t.tray);
+  }, [t]);
+
+  const update = useCallback((next: Settings) => {
+    void api.setSettings(next).then(setSettings);
+  }, []);
+
+  const pending = items.filter((i) => i.kind === "permission").length;
+  const questions = items.filter((i) => i.kind === "needsInput").length;
+  // Only finished turns can be cleared in bulk; a question is a stopped
+  // session, not news.
+  const clearable = items.filter((i) => i.kind === "completed").length;
+  // useTick re-renders every second, so this counts down on its own and
+  // disappears the moment the suppression lapses.
+  const snoozeRemaining =
+    snoozeUntil && snoozeUntil > Date.now()
+      ? Math.ceil((snoozeUntil - Date.now()) / 60000)
+      : null;
+
+  if (mode === "pill") {
+    return (
+      <I18nContext.Provider value={t}>
+        <main key="compact" className={`app compact ${pulse ? `pulse-${pulse}` : ""}`}>
+          <Pill
+            items={items}
+            onPeek={settings.hoverExpand ? peek : cancelPeek}
+            onCancelPeek={cancelPeek}
+          />
+        </main>
+      </I18nContext.Provider>
+    );
+  }
+
+  return (
+    <I18nContext.Provider value={t}>
+    <main
+      key="full"
+      className={`app ${pulse ? `pulse-${pulse}` : ""}`}
+    >
+      <header className="titlebar" data-tauri-drag-region>
+        <span className={`count ${pending > 0 ? "is-hot" : ""}`} data-tauri-drag-region>
+          {questions > 0
+            ? t.header.withQuestions(pending, questions)
+            : pending > 0
+              ? t.header.pending(pending)
+              : t.header.idle}
+        </span>
+        {/* Always visible while in force, and it expires on its own, so a
+            suppression cannot quietly become permanent. */}
+        {snoozeRemaining !== null && (
+          <button
+            className="snoozed"
+            title={t.snooze.hint}
+            onClick={() => void api.toggleSnooze().then(setSnoozeUntil)}
+          >
+            🔕 {t.snooze.active(snoozeRemaining)}
+          </button>
+        )}
+        {/* Every view is always reachable. A screen you can only leave by
+            guessing a key is a screen the approvals are stuck behind.
+            The titles matter once the panel is narrow enough that the labels
+            collapse and only the shortcut letters are left. */}
+        <nav>
+          <button
+            className={view === "inbox" ? "on" : ""}
+            title={t.nav.inbox}
+            onClick={() => setView("inbox")}
+          >
+            {/* An icon rather than a shortcut letter, because the inbox has
+                no key of its own — without it the button is literally empty
+                once the labels collapse. */}
+            <span className="nav-icon">▤</span>
+            <span className="label">{t.nav.inbox}</span>
+            {pending > 0 && <span className="nav-count">{pending}</span>}
+          </button>
+          <button
+            className={view === "windows" ? "on" : ""}
+            title={t.nav.windows}
+            onClick={() => setView("windows")}
+          >
+            <span className="label">{t.nav.windows}</span> <kbd>W</kbd>
+          </button>
+          <button
+            className={view === "projects" ? "on" : ""}
+            title={t.nav.projects}
+            onClick={() => setView("projects")}
+          >
+            <span className="label">{t.nav.projects}</span> <kbd>P</kbd>
+          </button>
+          <button
+            className={view === "rules" ? "on" : ""}
+            title={t.nav.rules}
+            onClick={() => setView("rules")}
+          >
+            <span className="label">{t.nav.rules}</span> <kbd>R</kbd>
+          </button>
+          <button
+            className={view === "setup" ? "on" : ""}
+            title={t.nav.settings}
+            onClick={() => setView("setup")}
+          >
+            <span className="label">{t.nav.settings}</span> <kbd>S</kbd>
+          </button>
+          <button title={t.pill.collapse} onClick={() => void api.collapsePanel()}>
+            ▾
+          </button>
+        </nav>
+      </header>
+
+      {view === "setup" && (
+        <Setup
+          installed={installed}
+          live={live}
+          port={port}
+          settings={settings}
+          onSettings={update}
+          onChanged={setInstalled}
+          onDone={() => setView("inbox")}
+        />
+      )}
+      {view === "windows" && <SessionsView />}
+      {view === "projects" && <ProjectsView />}
+      {view === "rules" && <RulesView />}
+
+      {view === "inbox" &&
+        (items.length === 0 ? (
+          <div className="empty">
+            <p className="empty-mark">✓</p>
+            <p>{t.empty.title}</p>
+            <p className="note">{t.empty.hint}</p>
+          </div>
+        ) : (
+          <ul className="list">
+            {items.map((item) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                selected={item.id === selectedId}
+                remember={remember?.id === item.id ? remember.scope : null}
+                onRemember={(scope) =>
+                  setRemember(scope ? { id: item.id, scope } : null)
+                }
+                onSelect={() => setSelectedId(item.id)}
+                onResolve={resolve}
+                onDismiss={dismiss}
+                onOpenEditor={openEditor}
+              />
+            ))}
+          </ul>
+        ))}
+
+      {undo !== null && (
+        <p className="undo">
+          <span>{t.actions.ruleAdded(undo)}</span>
+          <button
+            onClick={() => {
+              void api.undoLastRule();
+              setUndo(null);
+            }}
+          >
+            {t.actions.undo}
+          </button>
+        </p>
+      )}
+
+      {error && (
+        <p className="failure" onClick={() => setError(null)}>
+          {error}
+        </p>
+      )}
+
+      <footer className="hints">
+        {view === "inbox" ? (
+          <>
+            {/* The real key, not the configured one: they differ whenever
+                something else already owns it. */}
+            <span>
+              {shortcut ? <kbd>{shortcut}</kbd> : <kbd>{t.hints.trayOnly}</kbd>} {t.hints.show}
+            </span>
+            <span><kbd>J</kbd>/<kbd>K</kbd> {t.hints.move}</span>
+            <span><kbd>Esc</kbd> {t.hints.hide}</span>
+            {/* Only offered when there is something to clear, so the hint bar
+                stays quiet in the common case. */}
+            {clearable > 0 && (
+              <button className="clear-all" onClick={() => void api.dismissAll()}>
+                <kbd>⇧D</kbd> {t.actions.dismissAll(clearable)}
+              </button>
+            )}
+          </>
+        ) : (
+          <span><kbd>Esc</kbd> {t.hints.back}</span>
+        )}
+      </footer>
+    </main>
+    </I18nContext.Provider>
+  );
+}
