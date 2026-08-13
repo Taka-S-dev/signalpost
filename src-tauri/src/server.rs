@@ -49,7 +49,7 @@ fn verdict(behavior: &str, message: Option<&str>) -> Json<Value> {
 }
 
 pub fn port() -> u16 {
-    std::env::var("CLAUDENOTIFY_PORT")
+    std::env::var("SIGNALPOST_PORT")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(DEFAULT_PORT)
@@ -98,7 +98,7 @@ pub async fn serve(state: Arc<AppState>) -> std::io::Result<()> {
 }
 
 async fn health() -> Json<Value> {
-    Json(json!({ "ok": true, "app": "ClaudeNotify" }))
+    Json(json!({ "ok": true, "app": "Signalpost" }))
 }
 
 async fn permission(
@@ -127,7 +127,7 @@ async fn permission(
     state.decorate(&mut item);
 
     if state.auto_allows(&item) {
-        return verdict("allow", Some("ClaudeNotify auto-allow rule"));
+        return verdict("allow", Some("Signalpost auto-allow rule"));
     }
 
     let id = item.id.clone();
@@ -143,7 +143,7 @@ async fn permission(
 
     match outcome {
         Ok(Ok(Decision::Allow)) => verdict("allow", None),
-        Ok(Ok(Decision::Deny)) => verdict("deny", Some("Denied in ClaudeNotify")),
+        Ok(Ok(Decision::Deny)) => verdict("deny", Some("Denied in Signalpost")),
         // Timed out, or the row vanished. Returning no decision hands the
         // prompt back to the editor rather than answering for the user.
         _ => Json(json!({})),

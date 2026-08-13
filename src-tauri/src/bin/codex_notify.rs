@@ -1,14 +1,14 @@
 //! `notify` shim for Codex CLI.
 //!
 //! Codex only supports a single `notify` program and appends the event JSON as
-//! the last argument. This forwards that JSON to a running ClaudeNotify and
+//! the last argument. This forwards that JSON to a running Signalpost and
 //! then runs whatever `notify` program was configured before, so installing it
 //! cannot take the slot away from something already using it.
 //!
 //! Usage, as written into `~/.codex/config.toml`:
 //!
 //! ```toml
-//! notify = ["claudenotify-codex.exe", "--chain", "original.exe", "its-arg"]
+//! notify = ["signalpost-codex.exe", "--chain", "original.exe", "its-arg"]
 //! ```
 
 // No console window: Codex runs this on every turn, and a flash each time
@@ -26,7 +26,7 @@ const DEFAULT_PORT: u16 = 8787;
 const TIMEOUT: Duration = Duration::from_millis(700);
 
 fn port() -> u16 {
-    std::env::var("CLAUDENOTIFY_PORT")
+    std::env::var("SIGNALPOST_PORT")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(DEFAULT_PORT)

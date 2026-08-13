@@ -202,8 +202,8 @@ impl Default for TrayStrings {
             unsnooze: "Pop up again".into(),
             reset: "Reset position".into(),
             quit: "Quit".into(),
-            idle: "ClaudeNotify — nothing waiting".into(),
-            pending: "ClaudeNotify — {n} waiting".into(),
+            idle: "Signalpost — nothing waiting".into(),
+            pending: "Signalpost — {n} waiting".into(),
         }
     }
 }

@@ -8,7 +8,11 @@
 use std::path::{Path, PathBuf};
 use toml_edit::{Array, DocumentMut, Item, Value};
 
-const SHIM: &str = "claudenotify-codex.exe";
+const SHIM: &str = "signalpost-codex.exe";
+/// Recognised so a config written under the old name can still be detected
+/// and undone — otherwise renaming the app would strand a `notify` entry
+/// pointing at a binary that no longer exists.
+const FORMER_SHIM: &str = "claudenotify-codex.exe";
 const CHAIN_FLAG: &str = "--chain";
 
 pub fn config_path(home: &Path) -> PathBuf {
@@ -22,7 +26,8 @@ pub fn shim_path() -> Option<PathBuf> {
 }
 
 fn is_shim(value: &str) -> bool {
-    value.to_lowercase().replace('\\', "/").ends_with(SHIM)
+    let value = value.to_lowercase().replace('\\', "/");
+    value.ends_with(SHIM) || value.ends_with(FORMER_SHIM)
 }
 
 fn as_strings(item: Option<&Item>) -> Vec<String> {
@@ -159,12 +164,12 @@ mod tests {
     #[test]
     fn an_existing_notify_program_is_chained_not_replaced() {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\nmodel = \"gpt\"\n");
-        install(&home, Path::new("C:/app/claudenotify-codex.exe"), true).unwrap();
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
 
         assert_eq!(
             notify_of(&home),
             vec![
-                "C:/app/claudenotify-codex.exe",
+                "C:/app/signalpost-codex.exe",
                 "--chain",
                 "orig.exe",
                 "turn-ended"
@@ -176,13 +181,13 @@ mod tests {
     #[test]
     fn installing_twice_does_not_chain_the_shim_to_itself() {
         let home = scratch("notify = [ \"orig.exe\" ]\n");
-        let shim = Path::new("C:/app/claudenotify-codex.exe");
+        let shim = Path::new("C:/app/signalpost-codex.exe");
         install(&home, shim, true).unwrap();
         install(&home, shim, true).unwrap();
 
         assert_eq!(
             notify_of(&home),
-            vec!["C:/app/claudenotify-codex.exe", "--chain", "orig.exe"]
+            vec!["C:/app/signalpost-codex.exe", "--chain", "orig.exe"]
         );
         std::fs::remove_dir_all(&home).ok();
     }
@@ -190,7 +195,7 @@ mod tests {
     #[test]
     fn uninstall_restores_the_original_program() {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\n");
-        install(&home, Path::new("C:/app/claudenotify-codex.exe"), true).unwrap();
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
         assert!(is_installed(&home));
 
         uninstall(&home).unwrap();
@@ -204,7 +209,7 @@ mod tests {
         let home = scratch(
             "notify = [ \"orig.exe\" ]\nmodel = \"gpt-5.6\"\n\n[windows]\nsandbox = \"elevated\"\n",
         );
-        install(&home, Path::new("C:/app/claudenotify-codex.exe"), true).unwrap();
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
 
         let raw = std::fs::read_to_string(config_path(&home)).unwrap();
         let doc = raw.parse::<DocumentMut>().unwrap();
@@ -216,18 +221,32 @@ mod tests {
     #[test]
     fn overriding_drops_the_existing_program_instead_of_chaining_it() {
         let home = scratch("notify = [ \"orig.exe\", \"turn-ended\" ]\n");
-        install(&home, Path::new("C:/app/claudenotify-codex.exe"), false).unwrap();
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), false).unwrap();
 
-        assert_eq!(notify_of(&home), vec!["C:/app/claudenotify-codex.exe"]);
+        assert_eq!(notify_of(&home), vec!["C:/app/signalpost-codex.exe"]);
+        std::fs::remove_dir_all(&home).ok();
+    }
+
+    #[test]
+    fn a_config_left_by_the_former_name_is_replaced_rather_than_chained() {
+        let home = scratch(
+            "notify = [ \"C:/old/claudenotify-codex.exe\", \"--chain\", \"orig.exe\" ]\n",
+        );
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
+
+        assert_eq!(
+            notify_of(&home),
+            vec!["C:/app/signalpost-codex.exe", "--chain", "orig.exe"]
+        );
         std::fs::remove_dir_all(&home).ok();
     }
 
     #[test]
     fn a_config_without_notify_gets_a_valid_one() {
         let home = scratch("model = \"gpt\"\n\n[windows]\nsandbox = \"elevated\"\n");
-        install(&home, Path::new("C:/app/claudenotify-codex.exe"), true).unwrap();
+        install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
 
-        assert_eq!(notify_of(&home), vec!["C:/app/claudenotify-codex.exe"]);
+        assert_eq!(notify_of(&home), vec!["C:/app/signalpost-codex.exe"]);
         std::fs::remove_dir_all(&home).ok();
     }
 }

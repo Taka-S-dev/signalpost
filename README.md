@@ -1,4 +1,4 @@
-# ClaudeNotify
+# Signalpost
 
 *[日本語版はこちら](README.ja.md)*
 
@@ -14,10 +14,10 @@ the sessions never need to be visited at all.
 Claude Code's `PermissionRequest` hook can be an HTTP hook, and whatever it
 returns becomes the verdict. A hook is allowed 600 seconds.
 
-ClaudeNotify **holds that response open** and only answers when you press a key.
+Signalpost **holds that response open** and only answers when you press a key.
 
 ```
-Claude Code ──POST /hook/permission──▶ ClaudeNotify (response parked)
+Claude Code ──POST /hook/permission──▶ Signalpost (response parked)
                                               │
                                        a row appears
                                               │
@@ -125,7 +125,7 @@ Codex allows exactly one `notify` program, so installing cannot simply take
 the slot. A small shim goes in front and chains whatever was already there:
 
 ```toml
-notify = ["…\\claudenotify-codex.exe", "--chain", "…\\your-program.exe", "its-arg"]
+notify = ["…\\signalpost-codex.exe", "--chain", "…\\your-program.exe", "its-arg"]
 ```
 
 The shim posts the event JSON to the panel and then runs the original program
@@ -147,7 +147,7 @@ No matchers are used; the app filters by type itself, so a notification type
 added later cannot silently stop arriving.
 
 The server binds `127.0.0.1` only. The port defaults to `8787` and can be
-changed with `CLAUDENOTIFY_PORT` — reinstall the hooks afterwards.
+changed with `SIGNALPOST_PORT` — reinstall the hooks afterwards.
 
 ## Auto-allow rules
 

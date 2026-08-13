@@ -23,7 +23,7 @@ use rules::{RuleView, Scope};
 use settings::Settings;
 use state::{AppState, Geometry};
 
-pub const TRAY_ID: &str = "claudenotify-tray";
+pub const TRAY_ID: &str = "signalpost-tray";
 /// Long enough to get through a meeting, short enough to forget about safely.
 const SNOOZE_MINUTES: u64 = 30;
 
@@ -420,8 +420,8 @@ pub fn run() {
             // Losing the config directory only costs rule persistence; dying
             // here would take the whole approval path down with it.
             let config_dir = app.path().app_config_dir().unwrap_or_else(|error| {
-                eprintln!("ClaudeNotify: could not resolve the config directory ({error}); falling back to a temporary one");
-                std::env::temp_dir().join("com.claudenotify.app")
+                eprintln!("Signalpost: could not resolve the config directory ({error}); falling back to a temporary one");
+                std::env::temp_dir().join("com.signalpost.app")
             });
             let shared = Arc::new(AppState::new(handle.clone(), config_dir));
             app.manage(shared.clone());
@@ -435,7 +435,7 @@ pub fn run() {
 
             tauri::async_runtime::spawn(async move {
                 if let Err(error) = server::serve(shared).await {
-                    eprintln!("ClaudeNotify: could not bind port {}: {error}", server::port());
+                    eprintln!("Signalpost: could not bind port {}: {error}", server::port());
                 }
             });
 
@@ -589,7 +589,7 @@ fn setup_shortcut(app: &tauri::App) {
         })
         .build();
     if let Err(error) = app.handle().plugin(plugin) {
-        eprintln!("ClaudeNotify: no global shortcut ({error}); use the tray instead");
+        eprintln!("Signalpost: no global shortcut ({error}); use the tray instead");
         return;
     }
 
@@ -624,7 +624,7 @@ fn apply_shortcut(app: &tauri::AppHandle, wanted: &str) -> Option<String> {
                 state.set_active_shortcut(Some(candidate.to_string()));
             }
             if candidate != wanted {
-                eprintln!("ClaudeNotify: {wanted} was taken; using {candidate}");
+                eprintln!("Signalpost: {wanted} was taken; using {candidate}");
             }
             return Some(candidate.to_string());
         }
@@ -633,7 +633,7 @@ fn apply_shortcut(app: &tauri::AppHandle, wanted: &str) -> Option<String> {
     if let Some(state) = app.try_state::<Arc<AppState>>() {
         state.set_active_shortcut(None);
     }
-    eprintln!("ClaudeNotify: no global shortcut is available; use the tray instead");
+    eprintln!("Signalpost: no global shortcut is available; use the tray instead");
     None
 }
 

@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::oneshot;
@@ -100,8 +100,40 @@ pub struct AppState {
     app: AppHandle,
 }
 
+/// Files carried over when the app identifier changes.
+const CONFIG_FILES: [&str; 5] = [
+    "auto-allow.json",
+    "projects.json",
+    "risk.json",
+    "settings.json",
+    "window.json",
+];
+
+/// Copies configuration left behind by a previous app identifier.
+///
+/// The config directory is derived from the identifier, so renaming the app
+/// silently moves it — every auto-allow rule, project colour and preference
+/// would look deleted. Runs once: anything already in the new directory wins.
+fn migrate_config(config_dir: &Path) {
+    let Some(parent) = config_dir.parent() else { return };
+    let old = parent.join("com.claudenotify.app");
+    if !old.is_dir() || config_dir.join("settings.json").exists() {
+        return;
+    }
+    if std::fs::create_dir_all(config_dir).is_err() {
+        return;
+    }
+    for name in CONFIG_FILES {
+        let from = old.join(name);
+        if from.is_file() {
+            let _ = std::fs::copy(&from, config_dir.join(name));
+        }
+    }
+}
+
 impl AppState {
     pub fn new(app: AppHandle, config_dir: PathBuf) -> Self {
+        migrate_config(&config_dir);
         let rules_path = crate::rules::rules_path(&config_dir);
         let geometry_path = config_dir.join("window.json");
         let rules = Rules::load(&rules_path);

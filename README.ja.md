@@ -1,4 +1,4 @@
-# ClaudeNotify
+# Signalpost
 
 並列で動かしている Claude Code の**承認待ちを 1 か所に集めて、そこで処理する**ための常駐アプリ。
 
@@ -10,10 +10,10 @@
 Claude Code の `PermissionRequest` hook は HTTP タイプに対応していて、レスポンスで判断を返すと
 それがそのまま採用される。しかも hook のタイムアウトは 600 秒ある。
 
-ClaudeNotify はこの**レスポンスを返さずに握ったまま**にして、パネル上でキーが押された瞬間に返す。
+Signalpost はこの**レスポンスを返さずに握ったまま**にして、パネル上でキーが押された瞬間に返す。
 
 ```
-Claude Code ──POST /hook/permission──▶ ClaudeNotify (レスポンス保留)
+Claude Code ──POST /hook/permission──▶ Signalpost (レスポンス保留)
                                               │
                                         パネルに 1 行追加
                                               │
@@ -105,7 +105,7 @@ Codex の `notify` は 1 つしか設定できないため、単純に奪うこ�
 小さなシムを前に挟み、既存のものを後ろに連結する:
 
 ```toml
-notify = ["…\\claudenotify-codex.exe", "--chain", "…\\元のプログラム.exe", "その引数"]
+notify = ["…\\signalpost-codex.exe", "--chain", "…\\元のプログラム.exe", "その引数"]
 ```
 
 シムはイベント JSON をパネルに POST してから、元のプログラムを**本来渡されるはずの引数のまま**実行する。
@@ -122,12 +122,12 @@ notify = ["…\\claudenotify-codex.exe", "--chain", "…\\元のプログラム.
 matcher は付けず、種類の振り分けはアプリ側でやっている。将来 Claude Code に通知種別が
 増えても取りこぼさないため。
 
-サーバは `127.0.0.1` のみにバインドする。ポートは既定 `8787`、環境変数 `CLAUDENOTIFY_PORT` で変更可能
+サーバは `127.0.0.1` のみにバインドする。ポートは既定 `8787`、環境変数 `SIGNALPOST_PORT` で変更可能
 （変更したら「設定」から hooks を入れ直す）。
 
 ## 自動許可ルール
 
-`A` / `Shift+A` で作ったルールは `%APPDATA%/com.claudenotify.app/auto-allow.json` に保存され、
+`A` / `Shift+A` で作ったルールは `%APPDATA%/com.signalpost.app/auto-allow.json` に保存され、
 一致する呼び出しは**パネルに出ないまま即座に許可される**。使うほど待ちの件数が減っていく。
 一覧と削除は `R`。
 

@@ -172,7 +172,7 @@ export const ja: Dictionary = {
     unsnooze: "ポップアップを再開",
     reset: "位置をリセット",
     quit: "終了",
-    idle: "ClaudeNotify — 待ちなし",
-    pending: "ClaudeNotify — {n} 件の承認待ち",
+    idle: "Signalpost — 待ちなし",
+    pending: "Signalpost — {n} 件の承認待ち",
   },
 };

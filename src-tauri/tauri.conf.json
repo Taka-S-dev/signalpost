@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ClaudeNotify",
+  "productName": "Signalpost",
   "version": "0.1.0",
-  "identifier": "com.claudenotify.app",
+  "identifier": "com.signalpost.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "panel",
-        "title": "ClaudeNotify",
+        "title": "Signalpost",
         "width": 400,
         "height": 620,
         "minWidth": 320,

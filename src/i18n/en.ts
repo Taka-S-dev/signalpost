@@ -172,8 +172,8 @@ export const en = {
     unsnooze: "Pop up again",
     reset: "Reset position",
     quit: "Quit",
-    idle: "ClaudeNotify — nothing waiting",
-    pending: "ClaudeNotify — {n} waiting",
+    idle: "Signalpost — nothing waiting",
+    pending: "Signalpost — {n} waiting",
   },
 };
 
