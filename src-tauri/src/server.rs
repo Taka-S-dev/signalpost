@@ -64,6 +64,7 @@ async fn note(state: &Arc<AppState>) {
 pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route("/queue", get(queue))
         .route("/hook/permission", post(permission))
         .route("/hook/notification", post(notification))
         .route("/hook/tool-settled", post(tool_settled))
@@ -99,6 +100,27 @@ pub async fn serve(state: Arc<AppState>) -> std::io::Result<()> {
 
 async fn health() -> Json<Value> {
     Json(json!({ "ok": true, "app": "Signalpost" }))
+}
+
+/// What the inbox currently holds.
+///
+/// Read-only, and here because the interesting failures are about rows that
+/// linger: whether one was retired is otherwise only observable by looking at
+/// the panel, which is no way to check a timing question.
+async fn queue(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let rows: Vec<Value> = state
+        .items()
+        .iter()
+        .map(|i| {
+            json!({
+                "kind": i.kind,
+                "sessionId": i.session_id,
+                "toolName": i.tool_name,
+                "waitedMs": now_ms().saturating_sub(i.created_at),
+            })
+        })
+        .collect();
+    Json(json!({ "count": rows.len(), "rows": rows }))
 }
 
 async fn permission(
