@@ -44,6 +44,7 @@ export const en = {
     show: "show",
     move: "move",
     hide: "hide",
+    bar: "bar",
     trayOnly: "tray",
     back: "back to inbox",
   },
@@ -143,7 +144,7 @@ export const en = {
   pill: {
     hint: "Click to open",
     drag: "Drag to move (does not open)",
-    collapse: "Collapse to bar (C)",
+    collapse: "Collapse to the bar — click the bar or press Alt+Space to open it again",
     info: (n: number) => `${n} new`,
   },
   snooze: {

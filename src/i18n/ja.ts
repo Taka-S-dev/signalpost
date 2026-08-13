@@ -41,6 +41,7 @@ export const ja: Dictionary = {
     show: "表示",
     move: "移動",
     hide: "隠す",
+    bar: "バー",
     trayOnly: "トレイ",
     back: "受信箱に戻る",
   },
@@ -143,7 +144,7 @@ export const ja: Dictionary = {
   pill: {
     hint: "クリックで開く",
     drag: "ドラッグで移動（ここでは開かない）",
-    collapse: "バーに畳む (C)",
+    collapse: "バーに畳む — バーをクリックするか Alt+Space で戻る",
     info: (n: number) => `${n} 件`,
   },
   snooze: {

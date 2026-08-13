@@ -277,6 +277,12 @@ body {
   white-space: nowrap;
 }
 
+/* Set apart from the tabs: this one changes the shape, not the view. */
+.titlebar nav .collapse {
+  margin-left: 6px;
+  border-left-color: var(--text-dim);
+}
+
 .nav-icon {
   font-size: 11px;
   line-height: 1;
@@ -292,7 +298,13 @@ body {
 
 /* With labels, the icon would only repeat what the word already says. */
 @media (min-width: 401px) {
-  .nav-icon {
+  /* Set apart from the tabs: this one changes the shape, not the view. */
+.titlebar nav .collapse {
+  margin-left: 6px;
+  border-left-color: var(--text-dim);
+}
+
+.nav-icon {
     display: none;
   }
 }

@@ -361,8 +361,14 @@ export default function App() {
           >
             <span className="label">{t.nav.settings}</span> <kbd>S</kbd>
           </button>
-          <button title={t.pill.collapse} onClick={() => void api.collapsePanel()}>
-            ▾
+          {/* Not a tab: it changes the panel's shape rather than its
+              contents, so it sits apart from the group and says so. */}
+          <button
+            className="collapse"
+            title={t.pill.collapse}
+            onClick={() => void api.collapsePanel()}
+          >
+            ▬ <kbd>C</kbd>
           </button>
         </nav>
       </header>
@@ -438,6 +444,7 @@ export default function App() {
               {shortcut ? <kbd>{shortcut}</kbd> : <kbd>{t.hints.trayOnly}</kbd>} {t.hints.show}
             </span>
             <span><kbd>J</kbd>/<kbd>K</kbd> {t.hints.move}</span>
+            <span><kbd>C</kbd> {t.hints.bar}</span>
             <span><kbd>Esc</kbd> {t.hints.hide}</span>
             {/* Only offered when there is something to clear, so the hint bar
                 stays quiet in the common case. */}
