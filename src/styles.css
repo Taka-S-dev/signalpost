@@ -305,10 +305,12 @@ body {
   line-height: 1;
 }
 
-/* Below this width the labels stop fitting; the shortcut key — or the inbox
-   icon — still identifies each tab. */
+/* Below this width the labels stop fitting. The icon carries the tab on its
+   own; the shortcut chip goes with the label, because a row reading
+   "W P R S" names nothing and looked like the panel had lost its labels. */
 @media (max-width: 400px) {
-  .titlebar nav button .label {
+  .titlebar nav button .label,
+  .titlebar nav button kbd {
     display: none;
   }
 }
@@ -1148,10 +1150,32 @@ h2 {
 
 .hints {
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 7px 12px;
   border-top: 1px solid var(--line);
   background: var(--bg-raised);
   font-size: 11px;
   color: var(--text-dim);
+  /* A key and its meaning are one phrase. Letting them wrap turned the bar
+     into two ragged lines that broke mid-word. */
+  overflow: hidden;
+}
+
+.hints > * {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* The one thing here that acts rather than explains, so it keeps the corner
+   to itself instead of trailing the hints. */
+.hints .clear-all {
+  margin-left: auto;
+}
+
+/* Narrow, only the hints worth the width survive. */
+@media (max-width: 460px) {
+  .hints .minor {
+    display: none;
+  }
 }

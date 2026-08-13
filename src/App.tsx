@@ -8,7 +8,7 @@ import {
   type Scope,
   type Settings,
 } from "./api";
-import { dictionary, I18nContext } from "./i18n";
+import { dictionary, I18nContext, type Dictionary } from "./i18n";
 import { ItemRow } from "./components/ItemRow";
 import { Pill } from "./components/Pill";
 import { ProjectsView } from "./components/ProjectsView";
@@ -19,6 +19,17 @@ import { useInbox, useTick } from "./useInbox";
 import "./styles.css";
 
 type View = "inbox" | "windows" | "projects" | "rules" | "setup";
+
+/// Every tab carries an icon, because narrow panels hide the labels and a
+/// row of bare shortcut letters names nothing. The inbox has no key of its
+/// own: it is where Esc and answering a row already put you.
+const TABS: { view: View; name: keyof Dictionary["nav"]; icon: string; key?: string }[] = [
+  { view: "inbox", name: "inbox", icon: "▤" },
+  { view: "windows", name: "windows", icon: "⧉", key: "W" },
+  { view: "projects", name: "projects", icon: "◈", key: "P" },
+  { view: "rules", name: "rules", icon: "⚑", key: "R" },
+  { view: "setup", name: "settings", icon: "⚙", key: "S" },
+];
 
 /// Hooks are loaded when a session starts, so a hook arriving *after* the
 /// config was written is the only proof they are in effect.
@@ -323,46 +334,23 @@ export default function App() {
             The titles matter once the panel is narrow enough that the labels
             collapse and only the shortcut letters are left. */}
         <nav>
-          <button
-            className={view === "inbox" ? "on" : ""}
-            title={t.nav.inbox}
-            onClick={() => setView("inbox")}
-          >
-            {/* An icon rather than a shortcut letter, because the inbox has
-                no key of its own — without it the button is literally empty
-                once the labels collapse. */}
-            <span className="nav-icon">▤</span>
-            <span className="label">{t.nav.inbox}</span>
-            {pending > 0 && <span className="nav-count">{pending}</span>}
-          </button>
-          <button
-            className={view === "windows" ? "on" : ""}
-            title={t.nav.windows}
-            onClick={() => setView("windows")}
-          >
-            <span className="label">{t.nav.windows}</span> <kbd>W</kbd>
-          </button>
-          <button
-            className={view === "projects" ? "on" : ""}
-            title={t.nav.projects}
-            onClick={() => setView("projects")}
-          >
-            <span className="label">{t.nav.projects}</span> <kbd>P</kbd>
-          </button>
-          <button
-            className={view === "rules" ? "on" : ""}
-            title={t.nav.rules}
-            onClick={() => setView("rules")}
-          >
-            <span className="label">{t.nav.rules}</span> <kbd>R</kbd>
-          </button>
-          <button
-            className={view === "setup" ? "on" : ""}
-            title={t.nav.settings}
-            onClick={() => setView("setup")}
-          >
-            <span className="label">{t.nav.settings}</span> <kbd>S</kbd>
-          </button>
+          {TABS.map((tab) => (
+            <button
+              key={tab.view}
+              className={view === tab.view ? "on" : ""}
+              // Narrow, the button is only its icon, so the name has to be
+              // here — and the key with it, since the chip is hidden too.
+              title={`${t.nav[tab.name]}${tab.key ? ` (${tab.key})` : ""}`}
+              onClick={() => setView(tab.view)}
+            >
+              <span className="nav-icon">{tab.icon}</span>
+              <span className="label">{t.nav[tab.name]}</span>
+              {tab.key && <kbd>{tab.key}</kbd>}
+              {tab.view === "inbox" && pending > 0 && (
+                <span className="nav-count">{pending}</span>
+              )}
+            </button>
+          ))}
         </nav>
 
         {/* Not a tab: it changes the panel's shape, not what is shown. Drawn
@@ -448,8 +436,10 @@ export default function App() {
               {shortcut ? <kbd>{shortcut}</kbd> : <kbd>{t.hints.trayOnly}</kbd>} {t.hints.show}
             </span>
             <span><kbd>J</kbd>/<kbd>K</kbd> {t.hints.move}</span>
-            <span><kbd>C</kbd> {t.hints.bar}</span>
-            <span><kbd>Esc</kbd> {t.hints.hide}</span>
+            {/* Dropped first when the bar runs out of room: both are also
+                buttons you can see, and neither answers a row. */}
+            <span className="minor"><kbd>C</kbd> {t.hints.bar}</span>
+            <span className="minor"><kbd>Esc</kbd> {t.hints.hide}</span>
             {/* Only offered when there is something to clear, so the hint bar
                 stays quiet in the common case. */}
             {clearable > 0 && (
