@@ -114,6 +114,12 @@ export const ja: Dictionary = {
     allowEmpty:
       "まだありません。承認時に「次回から確認せずに許可する」をチェックするとここに溜まり、次から受信箱に出なくなります。",
     remove: "削除",
+    silentTotal: (n: number) =>
+      n === 0
+        ? "これまでに自動許可した回数：0 回"
+        : `これまでに ${n} 回、確認なしで許可しました。`,
+    usedTimes: (n: number, when: string) => `${n} 回 ・ 最後は ${when}`,
+    neverUsed: "まだ一度も使われていません",
     everyCall: (tool: string) => `${tool} のすべての呼び出し`,
     everywhere: "すべてのプロジェクト",
   },

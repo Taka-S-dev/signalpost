@@ -30,6 +30,14 @@ pub struct Rule {
     /// `None` matches any project.
     pub cwd: Option<String>,
     pub created_at: u64,
+    /// How many calls this rule has answered without asking. A rule is only
+    /// worth keeping if it earns its place, and a rule firing far more often
+    /// than expected is the first sign it was scoped too wide.
+    #[serde(default)]
+    pub hits: u32,
+    /// `None` until it fires for the first time.
+    #[serde(default)]
+    pub last_hit_at: Option<u64>,
 }
 
 impl Rule {
@@ -44,6 +52,8 @@ impl Rule {
             signature,
             cwd,
             created_at: crate::model::now_ms(),
+            hits: 0,
+            last_hit_at: None,
         }
     }
 
@@ -73,6 +83,8 @@ impl Rule {
             tool_name: self.tool_name.clone(),
             signature: self.signature.clone(),
             project: self.cwd.as_deref().map(crate::model::project_name),
+            hits: self.hits,
+            last_hit_at: self.last_hit_at,
         }
     }
 }
@@ -85,6 +97,8 @@ pub struct RuleView {
     pub signature: Option<String>,
     /// `None` means the rule applies in every project.
     pub project: Option<String>,
+    pub hits: u32,
+    pub last_hit_at: Option<u64>,
 }
 
 /// Windows paths differ in separator and case between hook payloads and the
@@ -117,8 +131,16 @@ impl Rules {
         }
     }
 
-    pub fn allows(&self, item: &Item) -> bool {
-        self.rules.iter().any(|r| r.matches(item))
+    /// Answers whether a rule covers this call, and records the fact on the
+    /// rule that did. Counting here rather than at the call site means a hit
+    /// can never be missed by a caller that forgets to report it.
+    pub fn allows(&mut self, item: &Item) -> bool {
+        let Some(rule) = self.rules.iter_mut().find(|r| r.matches(item)) else {
+            return false;
+        };
+        rule.hits += 1;
+        rule.last_hit_at = Some(crate::model::now_ms());
+        true
     }
 
     /// Returns whether a rule was actually added, so the UI only offers to
@@ -216,6 +238,33 @@ mod tests {
         ));
 
         assert!(rules.allows(&item("Read", "Read:a.rs", "c:\\work\\app")));
+    }
+
+    #[test]
+    fn each_silent_approval_is_counted_against_the_rule_that_made_it() {
+        let mut rules = Rules::default();
+        let src = item("Read", "Read:a.rs", "C:/work/app");
+        rules.add(Rule::from_item(&src, Scope::ToolInProject));
+
+        assert_eq!(rules.list()[0].hits, 0);
+        assert!(rules.allows(&item("Read", "Read:a.rs", "C:/work/app")));
+        assert!(rules.allows(&item("Read", "Read:b.rs", "C:/work/app")));
+        assert!(!rules.allows(&item("Read", "Read:b.rs", "C:/work/other")));
+
+        assert_eq!(rules.list()[0].hits, 2);
+        assert!(rules.list()[0].last_hit_at.is_some());
+    }
+
+    #[test]
+    fn only_the_first_matching_rule_takes_the_credit() {
+        let mut rules = Rules::default();
+        let src = item("Read", "Read:a.rs", "C:/work/app");
+        rules.add(Rule::from_item(&src, Scope::ExactCall));
+        rules.add(Rule::from_item(&src, Scope::ToolInProject));
+
+        assert!(rules.allows(&src));
+        assert_eq!(rules.list()[0].hits, 1);
+        assert_eq!(rules.list()[1].hits, 0);
     }
 
     #[test]

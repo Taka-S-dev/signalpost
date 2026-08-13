@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type RiskLevel, type RiskRule, type RuleView } from "../api";
 import { useT } from "../i18n";
+import { elapsed } from "../useInbox";
 
 /**
  * Two lists that both shape what the inbox does with a call: which ones skip
@@ -11,6 +12,7 @@ export function RulesView() {
   const [allowRules, setAllowRules] = useState<RuleView[]>([]);
   const [risk, setRisk] = useState<RiskRule[]>([]);
   const [adding, setAdding] = useState(false);
+  const totalHits = allowRules.reduce((sum, rule) => sum + rule.hits, 0);
 
   const levels: { value: RiskLevel; label: string }[] = [
     { value: "danger", label: t.rules.danger },
@@ -62,16 +64,30 @@ export function RulesView() {
       {allowRules.length === 0 ? (
         <p className="note">{t.rules.allowEmpty}</p>
       ) : (
-        <ul>
-          {allowRules.map((rule, index) => (
-            <li key={`${rule.toolName}-${index}`}>
-              <span className="rule-label">{describe(rule)}</span>
-              <button onClick={() => api.removeRule(index).then(setAllowRules)}>
-                {t.rules.remove}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* What these rules have actually done. Approvals made on your
+              behalf are invisible by design, so without a tally there is no
+              way to tell a rule that saved you fifty clicks from one that is
+              quietly approving more than you meant it to. */}
+          <p className="note">{t.rules.silentTotal(totalHits)}</p>
+          <ul>
+            {allowRules.map((rule, index) => (
+              <li key={`${rule.toolName}-${index}`}>
+                <span className="rule-label">
+                  <span className="rule-what">{describe(rule)}</span>
+                  <em className={rule.hits === 0 ? "unused" : ""}>
+                    {rule.hits === 0
+                      ? t.rules.neverUsed
+                      : t.rules.usedTimes(rule.hits, elapsed(rule.lastHitAt!, t.time))}
+                  </em>
+                </span>
+                <button onClick={() => api.removeRule(index).then(setAllowRules)}>
+                  {t.rules.remove}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <h2 className="secondary">{t.rules.riskTitle}</h2>

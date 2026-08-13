@@ -115,6 +115,12 @@ export const en = {
     allowEmpty:
       "None yet. Ticking \"allow without asking\" while approving adds one, and matching calls stop reaching the inbox.",
     remove: "Remove",
+    silentTotal: (n: number) =>
+      n === 0
+        ? "Nothing approved without asking yet."
+        : `${n} calls approved without asking so far.`,
+    usedTimes: (n: number, when: string) => `${n}× · last ${when}`,
+    neverUsed: "never used yet",
     everyCall: (tool: string) => `every ${tool} call`,
     everywhere: "all projects",
   },

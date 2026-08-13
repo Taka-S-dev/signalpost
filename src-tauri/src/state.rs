@@ -445,7 +445,14 @@ impl AppState {
     /// True when a persisted rule already covers this call, in which case it
     /// must never be shown to the user.
     pub fn auto_allows(&self, item: &Item) -> bool {
-        self.rules.lock().unwrap().allows(item)
+        let mut rules = self.rules.lock().unwrap();
+        if !rules.allows(item) {
+            return false;
+        }
+        // The tally is only useful if it survives a restart, and a silent
+        // approval is exactly the event nobody is watching happen.
+        rules.save(&self.rules_path);
+        true
     }
 
     /// Drops a session's finished-turn rows.

@@ -105,6 +105,9 @@ export interface RuleView {
   toolName: string;
   signature: string | null;
   project: string | null;
+  /** Calls this rule has approved without asking. */
+  hits: number;
+  lastHitAt: number | null;
 }
 
 export interface Project {
