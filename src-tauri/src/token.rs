@@ -9,8 +9,10 @@
 //! not be paintable by whatever else happens to be running.
 //!
 //! It is not a defence against code running as the same user: that code can
-//! read this file. What it does close is the gap to *other* accounts on a
-//! shared machine, which reach loopback but not each other's AppData.
+//! read this file. What it narrows is the gap to *other* accounts on a shared
+//! machine, which reach loopback but do not normally reach this file — how
+//! true that is depends on the profile's permissions, and an administrator
+//! reads it either way.
 //!
 //! Browsers were checked separately and are already shut out: the endpoints
 //! require `application/json`, which forces a CORS preflight that nothing here
