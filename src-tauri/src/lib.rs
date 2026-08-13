@@ -24,6 +24,11 @@ use settings::Settings;
 use state::{AppState, Geometry};
 
 pub const TRAY_ID: &str = "signalpost-tray";
+
+/// What the app is called in any folder a user might open. Deliberately not
+/// the bundle identifier: that has to be a globally unique reverse-DNS
+/// string, which is not a name to leave lying in someone's AppData.
+const PRODUCT_DIR: &str = "Signalpost";
 /// Long enough to get through a meeting, short enough to forget about safely.
 const SNOOZE_MINUTES: u64 = 30;
 
@@ -436,9 +441,6 @@ pub fn run() {
             let handle = app.handle().clone();
             // Losing the config directory only costs rule persistence; dying
             // here would take the whole approval path down with it.
-            // Named for the product, not the bundle identifier Tauri would
-            // otherwise use: %APPDATA% is a list of product names, and
-            // `com.signalpost.app` sitting among them reads as debris.
             let config_dir = app
                 .path()
                 .config_dir()
@@ -446,10 +448,11 @@ pub fn run() {
                     eprintln!("Signalpost: could not resolve the config directory ({error}); falling back to a temporary one");
                     std::env::temp_dir()
                 })
-                .join("Signalpost");
+                .join(PRODUCT_DIR);
             let shared = Arc::new(AppState::new(handle.clone(), config_dir));
             app.manage(shared.clone());
 
+            build_panel(app)?;
             setup_tray(app)?;
             setup_shortcut(app);
 
@@ -530,6 +533,39 @@ fn remember_geometry(window: &tauri::Window) {
         width: size.width,
         height: size.height,
     });
+}
+
+/// The panel is built here rather than declared in `tauri.conf.json` for one
+/// reason: only the builder can be given an absolute data directory.
+///
+/// Left to itself the webview writes to a folder named after the bundle
+/// identifier, so the identifier ends up carved into `%LOCALAPPDATA%` on
+/// every machine the app is installed on. The identifier has to be a
+/// reverse-DNS string to be unique; a folder someone else has to look at
+/// should be the product's name. This is the only way to have both.
+fn build_panel(app: &tauri::App) -> tauri::Result<()> {
+    let data_dir = app
+        .path()
+        .app_local_data_dir()
+        .ok()
+        .and_then(|p| p.parent().map(|parent| parent.join(PRODUCT_DIR)))
+        .unwrap_or_else(|| std::env::temp_dir().join(PRODUCT_DIR));
+
+    tauri::WebviewWindowBuilder::new(app, "panel", tauri::WebviewUrl::default())
+        .title(PRODUCT_DIR)
+        .inner_size(400.0, 620.0)
+        .min_inner_size(320.0, 260.0)
+        .resizable(true)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        // Placed and revealed once the queue has something in it.
+        .visible(false)
+        .shadow(false)
+        .data_directory(data_dir)
+        .build()?;
+    Ok(())
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
