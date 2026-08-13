@@ -1,5 +1,7 @@
 # Signalpost
 
+[![CI](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml/badge.svg)](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml)
+
 *[日本語版はこちら](README.ja.md)*
 
 A tray app that collects the approval prompts from every Claude Code session
@@ -238,6 +240,11 @@ npm run tauri dev      # develop
 npm run tauri build    # produce an NSIS installer
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+CI runs the same five steps on Windows — typecheck, frontend build, `cargo
+fmt --check`, `clippy -D warnings`, `cargo test` — so anything green here is
+green there. Windows only, because a pass from a platform the app cannot run
+on would say nothing.
 
 - Frontend: React 19 + TypeScript + Vite
 - Backend: Rust / Tauri 2 / axum

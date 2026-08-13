@@ -1,5 +1,7 @@
 # Signalpost
 
+[![CI](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml/badge.svg)](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml)
+
 並列で動かしている Claude Code の**承認待ちを 1 か所に集めて、そこで処理する**ための常駐アプリ。
 
 複数の VS Code ウィンドウを目視で巡回する必要をなくすのが目的なので、「通知して切り替えさせる」のではなく
@@ -208,6 +210,10 @@ npm run tauri dev      # 開発
 npm run tauri build    # NSIS インストーラを生成
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+CI は同じ 5 段を Windows で回す（型検査・フロントのビルド・`cargo fmt --check`・
+`clippy -D warnings`・`cargo test`）。手元で緑なら CI でも緑になる。
+Windows 限定なのは、動かないプラットフォームでの合格に意味が無いため。
 
 設計上の判断と、調べて分かった事実（どこにも記載のないフックの挙動を含む）は
 **[docs/DESIGN.md](docs/DESIGN.md)** にまとめてある。承認まわりを触る前に読むこと。
