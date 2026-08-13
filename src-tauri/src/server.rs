@@ -5,7 +5,11 @@
 //! the response there is what lets an approval be made from this app instead
 //! of from the editor window.
 
-use axum::{extract::State, routing::{get, post}, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use std::time::Duration;

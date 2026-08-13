@@ -184,7 +184,10 @@ fn as_diff(before: &str, after: &str) -> String {
             lines.push(format!("{marker} {line}"));
         }
         if text.lines().count() > DIFF_LINE_LIMIT {
-            lines.push(format!("{marker} … ({} more lines)", text.lines().count() - DIFF_LINE_LIMIT));
+            lines.push(format!(
+                "{marker} … ({} more lines)",
+                text.lines().count() - DIFF_LINE_LIMIT
+            ));
         }
     };
     if !before.is_empty() {
@@ -221,7 +224,10 @@ pub fn summarize(tool_name: &str, input: &Value) -> (String, Option<String>, &'s
         "Edit" => (as_diff(field("old_string"), field("new_string")), "diff"),
         "Write" => (as_diff("", field("content")), "diff"),
         "NotebookEdit" => (as_diff("", field("new_source")), "diff"),
-        _ => (serde_json::to_string_pretty(input).unwrap_or_default(), "text"),
+        _ => (
+            serde_json::to_string_pretty(input).unwrap_or_default(),
+            "text",
+        ),
     };
 
     let detail = if detail.chars().count() > DETAIL_LIMIT {

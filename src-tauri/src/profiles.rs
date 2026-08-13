@@ -164,7 +164,10 @@ impl Profiles {
         color: Option<String>,
         open_command: Option<String>,
     ) {
-        let clean = |v: Option<String>| v.filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string());
+        let clean = |v: Option<String>| {
+            v.filter(|s| !s.trim().is_empty())
+                .map(|s| s.trim().to_string())
+        };
         let key = normalize(cwd);
         match self.projects.iter_mut().find(|p| normalize(&p.cwd) == key) {
             Some(existing) => {
@@ -197,7 +200,7 @@ impl Profiles {
                 last_seen: p.last_seen,
             })
             .collect();
-        list.sort_by(|a, b| b.last_seen.cmp(&a.last_seen));
+        list.sort_by_key(|p| std::cmp::Reverse(p.last_seen));
         list
     }
 
@@ -243,13 +246,22 @@ mod tests {
     fn open_command_defaults_to_the_editor_and_substitutes_the_path() {
         let mut profiles = Profiles::default();
         profiles.touch("C:/work/app");
-        assert_eq!(profiles.open_command("C:/work/app"), "code -r \"C:/work/app\"");
+        assert_eq!(
+            profiles.open_command("C:/work/app"),
+            "code -r \"C:/work/app\""
+        );
 
         profiles.set("C:/work/app", None, None, Some("wt -d \"{cwd}\"".into()));
-        assert_eq!(profiles.open_command("C:/work/app"), "wt -d \"C:/work/app\"");
+        assert_eq!(
+            profiles.open_command("C:/work/app"),
+            "wt -d \"C:/work/app\""
+        );
 
         profiles.set("C:/work/app", None, None, Some(String::new()));
-        assert_eq!(profiles.open_command("C:/work/app"), "code -r \"C:/work/app\"");
+        assert_eq!(
+            profiles.open_command("C:/work/app"),
+            "code -r \"C:/work/app\""
+        );
     }
 
     #[test]

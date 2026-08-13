@@ -66,7 +66,12 @@ fn defaults() -> Vec<RiskRule> {
         rule("git push", Level::Danger, "↑", "push"),
         rule("reset --hard", Level::Danger, "⚠", "historyLoss"),
         rule("rm -rf", Level::Danger, "⚠", "recursiveDelete"),
-        rule("remove-item -recurse", Level::Danger, "⚠", "recursiveDelete"),
+        rule(
+            "remove-item -recurse",
+            Level::Danger,
+            "⚠",
+            "recursiveDelete",
+        ),
         rule("drop table", Level::Danger, "⚠", "dropTable"),
         rule("npm publish", Level::Danger, "📦", "publish"),
         rule("cargo publish", Level::Danger, "📦", "publish"),

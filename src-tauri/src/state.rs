@@ -106,25 +106,36 @@ const CONFIG_FILES: [&str; 5] = [
     "window.json",
 ];
 
-/// Copies configuration left behind by a previous app identifier.
+/// Copies configuration left behind by a previous config directory.
 ///
-/// The config directory is derived from the identifier, so renaming the app
-/// silently moves it — every auto-allow rule, project colour and preference
-/// would look deleted. Runs once: anything already in the new directory wins.
+/// The directory has changed twice: once with the rename, once when it moved
+/// off the bundle identifier onto the product name. Without this, either move
+/// would look like every auto-allow rule, project colour and preference had
+/// been deleted. Runs once — anything already in the new directory wins.
 fn migrate_config(config_dir: &Path) {
-    let Some(parent) = config_dir.parent() else { return };
-    let old = parent.join("com.claudenotify.app");
-    if !old.is_dir() || config_dir.join("settings.json").exists() {
+    let Some(parent) = config_dir.parent() else {
+        return;
+    };
+    if config_dir.join("settings.json").exists() {
         return;
     }
-    if std::fs::create_dir_all(config_dir).is_err() {
-        return;
-    }
-    for name in CONFIG_FILES {
-        let from = old.join(name);
-        if from.is_file() {
-            let _ = std::fs::copy(&from, config_dir.join(name));
+    // Newest first: a build that wrote under the identifier is closer to what
+    // the user last had than one from before the rename.
+    for previous in ["com.signalpost.app", "com.claudenotify.app"] {
+        let old = parent.join(previous);
+        if !old.is_dir() {
+            continue;
         }
+        if std::fs::create_dir_all(config_dir).is_err() {
+            return;
+        }
+        for name in CONFIG_FILES {
+            let from = old.join(name);
+            if from.is_file() {
+                let _ = std::fs::copy(&from, config_dir.join(name));
+            }
+        }
+        return;
     }
 }
 
@@ -263,7 +274,6 @@ impl AppState {
     pub fn is_peeking(&self) -> bool {
         *self.peeking.lock().unwrap()
     }
-
 
     pub fn set_pill(&self, pill: bool) {
         *self.pill.lock().unwrap() = pill;
@@ -673,7 +683,13 @@ impl AppState {
     }
 
     pub fn rule_views(&self) -> Vec<RuleView> {
-        self.rules.lock().unwrap().list().iter().map(Rule::view).collect()
+        self.rules
+            .lock()
+            .unwrap()
+            .list()
+            .iter()
+            .map(Rule::view)
+            .collect()
     }
 
     pub fn remove_rule(&self, index: usize) {
@@ -703,7 +719,12 @@ mod tests {
     use super::*;
 
     fn geometry(width: f64, height: f64) -> Geometry {
-        Geometry { x: 100.0, y: 50.0, width, height }
+        Geometry {
+            x: 100.0,
+            y: 50.0,
+            width,
+            height,
+        }
     }
 
     #[test]
@@ -716,7 +737,10 @@ mod tests {
     fn a_size_below_the_minimum_falls_back_to_the_default_but_keeps_the_position() {
         // The exact reading a monitor change produced in practice.
         let healed = geometry(259.0, 344.0).sane();
-        assert_eq!((healed.width, healed.height), (DEFAULT_WIDTH, DEFAULT_HEIGHT));
+        assert_eq!(
+            (healed.width, healed.height),
+            (DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        );
         assert_eq!((healed.x, healed.y), (100.0, 50.0));
     }
 

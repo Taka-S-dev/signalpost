@@ -108,7 +108,11 @@ mod platform {
 
             let path = String::from_utf16_lossy(&buffer[..length as usize]);
             let file = path.rsplit(['\\', '/']).next()?;
-            Some(file.trim_end_matches(".exe").trim_end_matches(".EXE").to_string())
+            Some(
+                file.trim_end_matches(".exe")
+                    .trim_end_matches(".EXE")
+                    .to_string(),
+            )
         }
     }
 
@@ -241,7 +245,10 @@ mod tests {
 
     #[test]
     fn editor_suffixes_are_stripped_but_other_titles_are_left_alone() {
-        assert_eq!(tidy_title("main.rs - myapp - Visual Studio Code"), "main.rs - myapp");
+        assert_eq!(
+            tidy_title("main.rs - myapp - Visual Studio Code"),
+            "main.rs - myapp"
+        );
         assert_eq!(tidy_title("pwsh - myapp"), "pwsh - myapp");
     }
 

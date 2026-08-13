@@ -201,7 +201,11 @@ struct HookStatus {
 #[tauri::command]
 fn hooks_status(state: Shared) -> HookStatus {
     let Ok(home) = state.app().path().home_dir() else {
-        return HookStatus { installed: false, installed_at: None, last_hook_at: None };
+        return HookStatus {
+            installed: false,
+            installed_at: None,
+            last_hook_at: None,
+        };
     };
     // The settings file's own timestamp survives restarts, so this does not
     // need remembering separately.
@@ -432,10 +436,17 @@ pub fn run() {
             let handle = app.handle().clone();
             // Losing the config directory only costs rule persistence; dying
             // here would take the whole approval path down with it.
-            let config_dir = app.path().app_config_dir().unwrap_or_else(|error| {
-                eprintln!("Signalpost: could not resolve the config directory ({error}); falling back to a temporary one");
-                std::env::temp_dir().join("com.signalpost.app")
-            });
+            // Named for the product, not the bundle identifier Tauri would
+            // otherwise use: %APPDATA% is a list of product names, and
+            // `com.signalpost.app` sitting among them reads as debris.
+            let config_dir = app
+                .path()
+                .config_dir()
+                .unwrap_or_else(|error| {
+                    eprintln!("Signalpost: could not resolve the config directory ({error}); falling back to a temporary one");
+                    std::env::temp_dir()
+                })
+                .join("Signalpost");
             let shared = Arc::new(AppState::new(handle.clone(), config_dir));
             app.manage(shared.clone());
 
@@ -494,7 +505,9 @@ fn remember_geometry(window: &tauri::Window) {
     if !window.is_visible().unwrap_or(false) {
         return;
     }
-    let Some(state) = window.app_handle().try_state::<Arc<AppState>>() else { return };
+    let Some(state) = window.app_handle().try_state::<Arc<AppState>>() else {
+        return;
+    };
     if state.geometry_saves_suppressed() {
         return;
     }
@@ -555,15 +568,16 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-fn tray_menu(
-    app: &tauri::AppHandle,
-    strings: &ui::TrayStrings,
-) -> tauri::Result<Menu<tauri::Wry>> {
+fn tray_menu(app: &tauri::AppHandle, strings: &ui::TrayStrings) -> tauri::Result<Menu<tauri::Wry>> {
     let snoozed = app
         .try_state::<Arc<AppState>>()
         .and_then(|s| s.snoozed_until())
         .is_some();
-    let snooze_label = if snoozed { &strings.unsnooze } else { &strings.snooze };
+    let snooze_label = if snoozed {
+        &strings.unsnooze
+    } else {
+        &strings.snooze
+    };
 
     let show = MenuItem::with_id(app, "show", &strings.show, true, None::<&str>)?;
     let bar = MenuItem::with_id(app, "bar", &strings.bar, true, None::<&str>)?;
@@ -575,7 +589,9 @@ fn tray_menu(
 
 /// Flips the suppression and rebuilds the menu so its label matches.
 fn toggle_snooze(app: &tauri::AppHandle) {
-    let Some(state) = app.try_state::<Arc<AppState>>() else { return };
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
     if state.snoozed_until().is_some() {
         state.clear_snooze();
     } else {
@@ -636,7 +652,9 @@ fn apply_shortcut(app: &tauri::AppHandle, wanted: &str) -> Option<String> {
         .collect::<Vec<_>>();
 
     for candidate in candidates {
-        let Ok(shortcut) = Shortcut::from_str(candidate) else { continue };
+        let Ok(shortcut) = Shortcut::from_str(candidate) else {
+            continue;
+        };
         if manager.register(shortcut).is_ok() {
             if let Some(state) = app.try_state::<Arc<AppState>>() {
                 state.set_active_shortcut(Some(candidate.to_string()));

@@ -30,7 +30,9 @@ pub enum Scope {
 /// The part of a signature after the tool name — the command, path or URL
 /// the user actually reads.
 pub fn command_of(signature: &str) -> &str {
-    signature.split_once(':').map_or(signature, |(_, rest)| rest)
+    signature
+        .split_once(':')
+        .map_or(signature, |(_, rest)| rest)
 }
 
 /// A first guess at how much of a command identifies it: enough leading
@@ -215,15 +217,12 @@ impl Rules {
     /// Returns whether a rule was actually added, so the UI only offers to
     /// undo something that happened.
     pub fn add(&mut self, rule: Rule) -> bool {
-        let duplicate = self
-            .rules
-            .iter()
-            .any(|r| {
-                r.tool_name == rule.tool_name
-                    && r.signature == rule.signature
-                    && r.prefix == rule.prefix
-                    && r.cwd == rule.cwd
-            });
+        let duplicate = self.rules.iter().any(|r| {
+            r.tool_name == rule.tool_name
+                && r.signature == rule.signature
+                && r.prefix == rule.prefix
+                && r.cwd == rule.cwd
+        });
         if duplicate {
             return false;
         }
@@ -313,8 +312,16 @@ mod tests {
             Scope::ToolInProject,
         ));
 
-        assert!(rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app/frontend")));
-        assert!(rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app/a/b")));
+        assert!(rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm test",
+            "C:/work/app/frontend"
+        )));
+        assert!(rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm test",
+            "C:/work/app/a/b"
+        )));
     }
 
     #[test]
@@ -327,7 +334,11 @@ mod tests {
 
         assert!(!rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work")));
         // A neighbour whose name merely opens the same way.
-        assert!(!rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app-secrets")));
+        assert!(!rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm test",
+            "C:/work/app-secrets"
+        )));
     }
 
     #[test]
@@ -342,7 +353,9 @@ mod tests {
     }
 
     fn prefixed(prefix: &str) -> Scope {
-        Scope::CommandPrefix { prefix: prefix.into() }
+        Scope::CommandPrefix {
+            prefix: prefix.into(),
+        }
     }
 
     /// The scope crosses from TypeScript as JSON, and a mismatch here fails
@@ -364,19 +377,35 @@ mod tests {
     fn a_prefix_rule_covers_later_runs_of_the_same_command() {
         let mut rules = Rules::default();
         rules.add(Rule::from_item(
-            &item("PowerShell", "PowerShell:npm run build --verbose", "C:/work/app"),
+            &item(
+                "PowerShell",
+                "PowerShell:npm run build --verbose",
+                "C:/work/app",
+            ),
             prefixed("npm run build"),
         ));
 
         // The point of the scope: the tail of the command may differ.
-        assert!(rules.allows(&item("PowerShell", "PowerShell:npm run build", "C:/work/app")));
+        assert!(rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm run build",
+            "C:/work/app"
+        )));
         assert!(rules.allows(&item(
             "PowerShell",
             "PowerShell:npm run build 2>&1 | Select-Object -Last 10",
             "C:/work/app",
         )));
-        assert!(!rules.allows(&item("PowerShell", "PowerShell:npm run test", "C:/work/app")));
-        assert!(!rules.allows(&item("PowerShell", "PowerShell:npm run build", "C:/work/other")));
+        assert!(!rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm run test",
+            "C:/work/app"
+        )));
+        assert!(!rules.allows(&item(
+            "PowerShell",
+            "PowerShell:npm run build",
+            "C:/work/other"
+        )));
     }
 
     #[test]
@@ -388,9 +417,17 @@ mod tests {
         ));
 
         // A different command that merely opens with the same letters.
-        assert!(!rules.allows(&item("Bash", "Bash:npm run build-and-deploy", "C:/work/app")));
+        assert!(!rules.allows(&item(
+            "Bash",
+            "Bash:npm run build-and-deploy",
+            "C:/work/app"
+        )));
         // Chained commands still start with the approved one.
-        assert!(rules.allows(&item("Bash", "Bash:npm run build; rm -rf dist", "C:/work/app")));
+        assert!(rules.allows(&item(
+            "Bash",
+            "Bash:npm run build; rm -rf dist",
+            "C:/work/app"
+        )));
     }
 
     #[test]
@@ -406,7 +443,10 @@ mod tests {
 
     #[test]
     fn the_suggested_prefix_names_the_program_and_what_it_does() {
-        assert_eq!(suggested_prefix("Bash:npm run build --verbose"), "npm run build");
+        assert_eq!(
+            suggested_prefix("Bash:npm run build --verbose"),
+            "npm run build"
+        );
         assert_eq!(suggested_prefix("Bash:cargo test"), "cargo test");
         assert_eq!(suggested_prefix("Bash:ls"), "ls");
     }

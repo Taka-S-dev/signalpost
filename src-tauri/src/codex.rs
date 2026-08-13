@@ -62,8 +62,7 @@ pub fn is_installed(home: &Path) -> bool {
         return false;
     };
     as_strings(doc.get("notify")).first().is_some_and(|first| {
-        first.to_lowercase().replace('\\', "/").ends_with(SHIM)
-            && Path::new(first).exists()
+        first.to_lowercase().replace('\\', "/").ends_with(SHIM) && Path::new(first).exists()
     })
 }
 
@@ -252,9 +251,8 @@ mod tests {
 
     #[test]
     fn a_config_left_by_the_former_name_is_replaced_rather_than_chained() {
-        let home = scratch(
-            "notify = [ \"C:/old/claudenotify-codex.exe\", \"--chain\", \"orig.exe\" ]\n",
-        );
+        let home =
+            scratch("notify = [ \"C:/old/claudenotify-codex.exe\", \"--chain\", \"orig.exe\" ]\n");
         install(&home, Path::new("C:/app/signalpost-codex.exe"), true).unwrap();
 
         assert_eq!(

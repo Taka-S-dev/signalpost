@@ -192,7 +192,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 - Frontend: React 19 + TypeScript + Vite
 - Backend: Rust / Tauri 2 / axum
 
-Config lives in the app config directory: `auto-allow.json`, `projects.json`,
+Config lives in `%APPDATA%/Signalpost`: `auto-allow.json`, `projects.json`,
 `risk.json`, `settings.json`, `window.json`.
 
 `GET /queue` reports what the inbox is holding and how long each row has

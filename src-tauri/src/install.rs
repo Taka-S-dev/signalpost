@@ -87,8 +87,9 @@ pub fn install(home: &Path) -> Result<PathBuf, String> {
 
     let existing = std::fs::read_to_string(&path).ok();
     let mut settings: Value = match &existing {
-        Some(raw) if !raw.trim().is_empty() => serde_json::from_str(raw)
-            .map_err(|e| format!("could not parse settings.json: {e}"))?,
+        Some(raw) if !raw.trim().is_empty() => {
+            serde_json::from_str(raw).map_err(|e| format!("could not parse settings.json: {e}"))?
+        }
         _ => Value::Object(Map::new()),
     };
 
@@ -116,8 +117,7 @@ pub fn install(home: &Path) -> Result<PathBuf, String> {
     if let Some(previous) = existing {
         let _ = std::fs::write(path.with_extension("json.bak"), previous);
     }
-    let rendered =
-        serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    let rendered = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     std::fs::write(&path, rendered).map_err(|e| e.to_string())?;
     Ok(path)
 }
@@ -165,9 +165,7 @@ mod tests {
         // The app registers a Stop hook of its own, so the user's must survive
         // alongside it rather than be replaced by it.
         let stop = after["hooks"]["Stop"].as_array().unwrap();
-        assert!(stop
-            .iter()
-            .any(|e| e["hooks"][0]["command"] == "echo hi"));
+        assert!(stop.iter().any(|e| e["hooks"][0]["command"] == "echo hi"));
         assert!(stop.iter().any(is_ours));
         assert!(is_installed(&dir));
 
@@ -182,7 +180,13 @@ mod tests {
 
         let after: Value =
             serde_json::from_str(&std::fs::read_to_string(settings_path(&dir)).unwrap()).unwrap();
-        assert_eq!(after["hooks"]["PermissionRequest"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            after["hooks"]["PermissionRequest"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
 
         uninstall(&dir).unwrap();
         assert!(!is_installed(&dir));

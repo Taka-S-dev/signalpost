@@ -71,7 +71,9 @@ pub fn watch_peek(app: &AppHandle) {
         loop {
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 
-            let Some(state) = app.try_state::<Arc<AppState>>() else { return };
+            let Some(state) = app.try_state::<Arc<AppState>>() else {
+                return;
+            };
             if !state.is_peeking() {
                 return;
             }
@@ -394,8 +396,12 @@ fn badge_tray(app: &AppHandle, pending: usize, info: usize) {
         }
     }
 
-    let Some(tray) = app.tray_by_id(crate::TRAY_ID) else { return };
-    let Some(base) = app.default_window_icon() else { return };
+    let Some(tray) = app.tray_by_id(crate::TRAY_ID) else {
+        return;
+    };
+    let Some(base) = app.default_window_icon() else {
+        return;
+    };
     match dot {
         None => {
             let _ = tray.set_icon(Some(base.clone()));
@@ -426,7 +432,11 @@ fn draw_dot(rgba: &mut [u8], width: u32, height: u32, color: [u8; 4]) {
                 continue;
             }
             let pixel = ((y * width + x) * 4) as usize;
-            let paint = if distance > ring { [10, 12, 16, 255] } else { color };
+            let paint = if distance > ring {
+                [10, 12, 16, 255]
+            } else {
+                color
+            };
             rgba[pixel..pixel + 4].copy_from_slice(&paint);
         }
     }
@@ -442,7 +452,11 @@ fn draw_dot(rgba: &mut [u8], width: u32, height: u32, color: [u8; 4]) {
 fn toast(app: &AppHandle, item: &Item) {
     use tauri_winrt_notification::{Duration, Toast};
 
-    let label = if item.label.is_empty() { &item.project } else { &item.label };
+    let label = if item.label.is_empty() {
+        &item.project
+    } else {
+        &item.label
+    };
     let handle = app.clone();
     let cwd = item.cwd.clone();
     let project = item.project.clone();
@@ -476,13 +490,17 @@ fn toast(_app: &AppHandle, _item: &Item) {}
 
 /// Docks the panel to the right edge of the monitor it is on.
 fn dock(window: &WebviewWindow) {
-    let Ok(Some(monitor)) = window.current_monitor() else { return };
+    let Ok(Some(monitor)) = window.current_monitor() else {
+        return;
+    };
     let scale = monitor.scale_factor();
     // Same reason as the clamp: the taskbar is not usable space.
     let work = monitor.work_area();
     let screen = work.size.to_logical::<f64>(scale);
     let origin = work.position.to_logical::<f64>(scale);
-    let Ok(size) = window.outer_size() else { return };
+    let Ok(size) = window.outer_size() else {
+        return;
+    };
     let size = size.to_logical::<f64>(scale);
 
     let x = origin.x + screen.width - size.width - EDGE_MARGIN;
