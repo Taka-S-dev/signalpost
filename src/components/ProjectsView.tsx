@@ -22,8 +22,8 @@ export function ProjectsView() {
     void api.defaultOpenCommand().then(setDefaultCommand);
   }, []);
 
-  /// Only the field being edited changes; the others keep whatever override
-  /// they already had rather than being reset to the derived value.
+  // Only the field being edited changes; the others keep whatever override
+  // they already had rather than being reset to the derived value.
   const overrides = (project: Project) => ({
     name: project.label === folderName(project.cwd) ? null : project.label,
     color: project.customized ? project.color : null,

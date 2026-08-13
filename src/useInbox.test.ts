@@ -31,8 +31,8 @@ describe("elapsed", () => {
     expect(at(start + 90 * 60_000, start)).toBe("1h30m");
   });
 
-  /// A row created a moment in the future — the clock stepping back, or two
-  /// machines disagreeing — must not read as a negative age.
+  // A row created a moment in the future — the clock stepping back, or two
+  // machines disagreeing — must not read as a negative age.
   it("never goes below zero", () => {
     expect(at(start, start + 5_000)).toBe("0s");
   });

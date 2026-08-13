@@ -20,9 +20,9 @@ import "./styles.css";
 
 type View = "inbox" | "windows" | "projects" | "rules" | "setup";
 
-/// Every tab carries an icon, because narrow panels hide the labels and a
-/// row of bare shortcut letters names nothing. The inbox has no key of its
-/// own: it is where Esc and answering a row already put you.
+// Every tab carries an icon, because narrow panels hide the labels and a
+// row of bare shortcut letters names nothing. The inbox has no key of its
+// own: it is where Esc and answering a row already put you.
 const TABS: { view: View; name: keyof Dictionary["nav"]; icon: string; key?: string }[] = [
   { view: "inbox", name: "inbox", icon: "▤" },
   { view: "windows", name: "windows", icon: "⧉", key: "W" },
@@ -31,9 +31,9 @@ const TABS: { view: View; name: keyof Dictionary["nav"]; icon: string; key?: str
   { view: "setup", name: "settings", icon: "⚙", key: "S" },
 ];
 
-/// Every key the panel answers to, in the order they come up: move, decide,
-/// clear, leave. The global shortcut is listed separately because the one in
-/// force is not always the one configured.
+// Every key the panel answers to, in the order they come up: move, decide,
+// clear, leave. The global shortcut is listed separately because the one in
+// force is not always the one configured.
 const KEYS: [string, keyof Dictionary["hints"]][] = [
   ["J / K", "move"],
   ["Y", "allow"],
@@ -48,8 +48,8 @@ const KEYS: [string, keyof Dictionary["hints"]][] = [
   ["Esc", "escape"],
 ];
 
-/// Hooks are loaded when a session starts, so a hook arriving *after* the
-/// config was written is the only proof they are in effect.
+// Hooks are loaded when a session starts, so a hook arriving *after* the
+// config was written is the only proof they are in effect.
 function isLive(status: HookStatus): boolean {
   if (!status.installed || status.lastHookAt === null) return false;
   return status.installedAt === null || status.lastHookAt >= status.installedAt;
@@ -252,10 +252,10 @@ export default function App() {
     hoverTimer.current = window.setTimeout(() => void api.expandPanel(true), 350);
   }, [cancelPeek]);
 
-  /// Typing is the one case where it must not close on its own. Clicking
-  /// anything else changes nothing: the pointer leaving is the whole signal,
-  /// and pinning turned a window opened by hovering into one that had to be
-  /// closed by hand.
+  // Typing is the one case where it must not close on its own. Clicking
+  // anything else changes nothing: the pointer leaving is the whole signal,
+  // and pinning turned a window opened by hovering into one that had to be
+  // closed by hand.
   useEffect(() => {
     const onFocus = (event: FocusEvent) => {
       const target = event.target as HTMLElement | null;

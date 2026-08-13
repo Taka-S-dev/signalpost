@@ -60,9 +60,9 @@ describe("useInbox selection", () => {
     await waitFor(() => expect(result.current.selectedId).toBe("a"));
   });
 
-  /// The reason selection is held by id and not by index. A row resolving
-  /// above the cursor would otherwise slide a different row under it, and the
-  /// next `Y` would answer something the user never looked at.
+  // The reason selection is held by id and not by index. A row resolving
+  // above the cursor would otherwise slide a different row under it, and the
+  // next `Y` would answer something the user never looked at.
   it("stays on the same row when an earlier one is resolved", async () => {
     const { result } = renderHook(() => useInbox(settings));
     await waitFor(() => expect(result.current.selectedId).toBe("a"));
@@ -105,10 +105,10 @@ describe("useInbox selection", () => {
     expect(result.current.selectedId).toBe("c");
   });
 
-  /// A jump past the end lands on the end, rather than doing nothing. Only
-  /// this distinguishes clamping from the guard that skips a missing row: for
-  /// a step of one the two are identical, which is how the clamp survived
-  /// being deleted while every other test still passed.
+  // A jump past the end lands on the end, rather than doing nothing. Only
+  // this distinguishes clamping from the guard that skips a missing row: for
+  // a step of one the two are identical, which is how the clamp survived
+  // being deleted while every other test still passed.
   it("lands on the last row when asked to move past it", async () => {
     const { result } = renderHook(() => useInbox(settings));
     await waitFor(() => expect(result.current.selectedId).toBe("a"));

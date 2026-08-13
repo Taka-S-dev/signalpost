@@ -14,9 +14,9 @@ import { elapsed } from "../useInbox";
  */
 interface Props {
   items: Item[];
-  /// Hovering opens the bar — except over the grip, which exists to be
-  /// grabbed. Expanding out from under the pointer as it arrives makes the
-  /// bar impossible to drag.
+  // Hovering opens the bar — except over the grip, which exists to be
+  // grabbed. Expanding out from under the pointer as it arrives makes the
+  // bar impossible to drag.
   onPeek: () => void;
   onCancelPeek: () => void;
 }

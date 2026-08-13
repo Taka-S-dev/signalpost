@@ -48,8 +48,8 @@ export function RulesView() {
     ]);
   };
 
-  /// Rules read differently per language, so the sentence is built here from
-  /// the parts rather than shipped as prose from Rust.
+  // Rules read differently per language, so the sentence is built here from
+  // the parts rather than shipped as prose from Rust.
   const describe = (rule: RuleView) => {
     // A prefix rule stores no signature, so without its own branch it would
     // be described as covering every call of the tool — far wider than it

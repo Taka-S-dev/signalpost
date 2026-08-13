@@ -7,7 +7,7 @@ const FRAME_EXTRA = "#d5dae3";
 
 interface Props {
   installed: boolean;
-  /// True once a hook has actually arrived since the config was written.
+  // True once a hook has actually arrived since the config was written.
   live: boolean;
   port: number;
   settings: Settings;
