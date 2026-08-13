@@ -542,6 +542,27 @@ impl AppState {
         rules.list().iter().map(Rule::view).collect()
     }
 
+    /// Which standing rule an answer should create, if any.
+    ///
+    /// Separate from [`AppState::resolve`] so the invariant can be tested:
+    /// **a call marked dangerous never becomes a rule**. The UI greys the
+    /// checkbox out, but that is one layer, and the command behind it is
+    /// reachable without it. A rule made here would approve that call unseen
+    /// from then on, which is the one outcome this app must never produce.
+    fn rule_to_create(item: &Item, decision: Decision, remember: Option<Scope>) -> Option<Scope> {
+        if decision != Decision::Allow {
+            return None;
+        }
+        if item
+            .risk
+            .as_ref()
+            .is_some_and(|r| r.level == crate::risk::Level::Danger)
+        {
+            return None;
+        }
+        remember
+    }
+
     /// Answers a permission row, optionally remembering the decision.
     ///
     /// Reports whether a rule was created, so the UI can offer to take it back
@@ -557,7 +578,7 @@ impl AppState {
         };
 
         let mut rule_added = false;
-        if let (Some(scope), Decision::Allow) = (remember, decision) {
+        if let Some(scope) = Self::rule_to_create(&item, decision, remember) {
             let mut rules = self.rules.lock().unwrap();
             rule_added = rules.add(Rule::from_item(&item, scope));
             rules.save(&self.rules_path);
@@ -725,6 +746,61 @@ mod tests {
             width,
             height,
         }
+    }
+
+    fn item_with(risk: Option<crate::risk::Level>) -> Item {
+        Item {
+            id: "1".into(),
+            kind: ItemKind::Permission,
+            agent: crate::model::Agent::Claude,
+            session_id: "s".into(),
+            cwd: "C:/work/app".into(),
+            project: "app".into(),
+            label: "app".into(),
+            color: "#8ea3c4".into(),
+            tool_name: "Bash".into(),
+            summary: String::new(),
+            detail: None,
+            detail_kind: "text".into(),
+            risk: risk.map(|level| crate::risk::RiskMark {
+                level,
+                icon: "!".into(),
+                label: "danger".into(),
+                key: None,
+            }),
+            repeat: 1,
+            signature: "Bash:rm -rf /".into(),
+            created_at: 0,
+        }
+    }
+
+    /// The UI disables the checkbox, but the command behind it does not go
+    /// through the UI. This is the layer that actually holds.
+    #[test]
+    fn a_dangerous_call_never_becomes_a_rule_even_when_one_is_asked_for() {
+        let scope = AppState::rule_to_create(
+            &item_with(Some(crate::risk::Level::Danger)),
+            Decision::Allow,
+            Some(Scope::ToolInProject),
+        );
+        assert!(scope.is_none());
+    }
+
+    #[test]
+    fn a_call_marked_only_caution_may_still_become_a_rule() {
+        let scope = AppState::rule_to_create(
+            &item_with(Some(crate::risk::Level::Caution)),
+            Decision::Allow,
+            Some(Scope::ToolInProject),
+        );
+        assert_eq!(scope, Some(Scope::ToolInProject));
+    }
+
+    #[test]
+    fn denying_never_creates_a_rule() {
+        let scope =
+            AppState::rule_to_create(&item_with(None), Decision::Deny, Some(Scope::ToolInProject));
+        assert!(scope.is_none());
     }
 
     #[test]

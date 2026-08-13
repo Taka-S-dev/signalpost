@@ -6,8 +6,7 @@ export type Decision = "allow" | "deny";
 export type Scope =
   | { kind: "exactCall" }
   | { kind: "commandPrefix"; prefix: string }
-  | { kind: "toolInProject" }
-  | { kind: "toolEverywhere" };
+  | { kind: "toolInProject" };
 
 export type ScopeKind = Scope["kind"];
 

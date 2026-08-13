@@ -22,9 +22,12 @@ pub enum Scope {
     /// is not a decision anyone should make from a checkbox.
     CommandPrefix { prefix: String },
     /// Any call of this tool, in this project only.
+    ///
+    /// The widest scope offered, and deliberately the widest that exists. An
+    /// "anywhere" variant used to sit here; nothing could create one, so all
+    /// it did was leave a way to approve every call of a tool in every
+    /// project to whatever reached the command next.
     ToolInProject,
-    /// Any call of this tool, anywhere.
-    ToolEverywhere,
 }
 
 /// The part of a signature after the tool name — the command, path or URL
@@ -77,7 +80,6 @@ impl Rule {
             Scope::ExactCall => (Some(item.signature.clone()), None, Some(item.cwd.clone())),
             Scope::CommandPrefix { prefix } => (None, Some(prefix), Some(item.cwd.clone())),
             Scope::ToolInProject => (None, None, Some(item.cwd.clone())),
-            Scope::ToolEverywhere => (None, None, None),
         };
         Rule {
             tool_name: item.tool_name.clone(),
