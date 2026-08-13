@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   api,
@@ -29,6 +29,23 @@ const TABS: { view: View; name: keyof Dictionary["nav"]; icon: string; key?: str
   { view: "projects", name: "projects", icon: "◈", key: "P" },
   { view: "rules", name: "rules", icon: "⚑", key: "R" },
   { view: "setup", name: "settings", icon: "⚙", key: "S" },
+];
+
+/// Every key the panel answers to, in the order they come up: move, decide,
+/// clear, leave. The global shortcut is listed separately because the one in
+/// force is not always the one configured.
+const KEYS: [string, keyof Dictionary["hints"]][] = [
+  ["J / K", "move"],
+  ["Y", "allow"],
+  ["N", "deny"],
+  ["↵", "openEditor"],
+  ["D", "dismiss"],
+  ["⇧D", "dismissAll"],
+  ["W P R S", "views"],
+  ["M", "snooze"],
+  ["C", "bar"],
+  // One key, two meanings depending on where you are, so it says both.
+  ["Esc", "escape"],
 ];
 
 /// Hooks are loaded when a session starts, so a hook arriving *after* the
@@ -89,6 +106,9 @@ export default function App() {
   // the row is answered, so the choice can never leak onto the next call.
   const [remember, setRemember] = useState<{ id: string; scope: Scope } | null>(null);
   const [undo, setUndo] = useState<string | null>(null);
+  // The key list, on demand. It used to be a strip along the bottom, which
+  // spent height on every session to answer a question asked in the first.
+  const [keys, setKeys] = useState(false);
   // Re-read on every snapshot: a call approved by a rule never appears in
   // the queue, so an arrival is the only hint that the tally may have moved.
   const [autoAllowed, setAutoAllowed] = useState(0);
@@ -143,8 +163,14 @@ export default function App() {
       if (event.target instanceof HTMLInputElement) return;
 
       if (event.key === "Escape") {
-        if (view === "inbox") void api.hidePanel();
+        // The overlay is the shallowest thing on screen, so it closes first.
+        if (keys) setKeys(false);
+        else if (view === "inbox") void api.hidePanel();
         else setView("inbox");
+        return;
+      }
+      if (event.key === "?") {
+        setKeys((open) => !open);
         return;
       }
       if (event.key === "r") {
@@ -207,7 +233,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view, selected, move, resolve, dismiss, openEditor]);
+  }, [view, selected, keys, move, resolve, dismiss, openEditor]);
 
   const t = useMemo(() => dictionary(settings.lang), [settings.lang]);
 
@@ -373,6 +399,12 @@ export default function App() {
           ))}
         </nav>
 
+        {/* The only thing left pointing at the keyboard. Without it the keys
+            would be unfindable, which is why the strip along the bottom
+            could not simply be deleted. */}
+        <button className="collapse" title={t.keys.hint} onClick={() => setKeys((o) => !o)}>
+          ?
+        </button>
         {/* Not a tab: it changes the panel's shape, not what is shown. Drawn
             as the window control it behaves like, since a bespoke glyph in
             the tab row read as another view. */}
@@ -456,31 +488,34 @@ export default function App() {
         </p>
       )}
 
-      <footer className="hints">
-        {view === "inbox" ? (
-          <>
+      {keys && (
+        <div className="keys" onClick={() => setKeys(false)}>
+          <dl>
             {/* The real key, not the configured one: they differ whenever
                 something else already owns it. */}
-            <span>
-              {shortcut ? <kbd>{shortcut}</kbd> : <kbd>{t.hints.trayOnly}</kbd>} {t.hints.show}
-            </span>
-            <span><kbd>J</kbd>/<kbd>K</kbd> {t.hints.move}</span>
-            {/* Dropped first when the bar runs out of room: both are also
-                buttons you can see, and neither answers a row. */}
-            <span className="minor"><kbd>C</kbd> {t.hints.bar}</span>
-            <span className="minor"><kbd>Esc</kbd> {t.hints.hide}</span>
-            {/* Only offered when there is something to clear, so the hint bar
-                stays quiet in the common case. */}
-            {clearable > 0 && (
-              <button className="clear-all" onClick={() => void api.dismissAll()}>
-                <kbd>⇧D</kbd> {t.actions.dismissAll(clearable)}
-              </button>
-            )}
-          </>
-        ) : (
-          <span><kbd>Esc</kbd> {t.hints.back}</span>
-        )}
-      </footer>
+            <dt>{shortcut ? <kbd>{shortcut}</kbd> : <kbd>{t.hints.trayOnly}</kbd>}</dt>
+            <dd>{t.hints.show}</dd>
+            {KEYS.map(([key, name]) => (
+              <Fragment key={key}>
+                <dt><kbd>{key}</kbd></dt>
+                <dd>{t.hints[name]}</dd>
+              </Fragment>
+            ))}
+          </dl>
+          <p className="note">{t.keys.dismiss}</p>
+        </div>
+      )}
+
+      {/* Only rendered when it has something to offer. The strip used to be
+          permanent, spending height on hints that stop being news after the
+          first session. */}
+      {view === "inbox" && clearable > 0 && (
+        <footer className="hints">
+          <button className="clear-all" onClick={() => void api.dismissAll()}>
+            <kbd>⇧D</kbd> {t.actions.dismissAll(clearable)}
+          </button>
+        </footer>
+      )}
     </main>
     </I18nContext.Provider>
   );

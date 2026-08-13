@@ -45,6 +45,8 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* The key overlay lays itself over the panel, not the window. */
+  position: relative;
   background: var(--bg);
   border: 1px solid var(--frame, var(--line));
   border-radius: var(--radius);
@@ -1268,34 +1270,51 @@ h2 {
   word-break: break-all;
 }
 
+/* All that is left of the old hint strip: the one thing in it that acted
+   rather than explained. */
 .hints {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
   padding: 7px 12px;
   border-top: 1px solid var(--line);
   background: var(--bg-raised);
   font-size: 11px;
   color: var(--text-dim);
-  /* A key and its meaning are one phrase. Letting them wrap turned the bar
-     into two ragged lines that broke mid-word. */
-  overflow: hidden;
 }
 
-.hints > * {
-  flex: none;
-  white-space: nowrap;
+/* Covers the list rather than sitting beside it: it is asked for, read, and
+   dismissed, and never competes with a row for attention. */
+.keys {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: rgb(16 18 22 / 0.97);
+  font-size: 11.5px;
 }
 
-/* The one thing here that acts rather than explains, so it keeps the corner
-   to itself instead of trailing the hints. */
-.hints .clear-all {
-  margin-left: auto;
+.keys dl {
+  display: grid;
+  /* The keys column is as wide as its widest key and no wider, so every
+     description starts at the same place and the list reads down. */
+  grid-template-columns: max-content 1fr;
+  gap: 7px 12px;
+  margin: 0;
 }
 
-/* Narrow, only the hints worth the width survive. */
-@media (max-width: 460px) {
-  .hints .minor {
-    display: none;
-  }
+.keys dt {
+  text-align: right;
+}
+
+.keys dd {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.keys .note {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--text-dim);
 }
