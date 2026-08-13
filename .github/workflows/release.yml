@@ -58,11 +58,16 @@ jobs:
           $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           $installer = "src-tauri/target/release/bundle/nsis/Signalpost_${version}_x64-setup.exe"
           if (-not (Test-Path $installer)) { throw "no installer at $installer" }
-          $notes = @"
-Windows x64 installer.
-
-The build is unsigned, so SmartScreen shows "Windows protected your PC" on
-first run — More info, then Run anyway. Ask the setup screen to install the
-hooks afterwards, and restart any Claude Code session that is already open.
-"@
+          # Joined from an array rather than written as a here-string: the
+          # terminator of one has to sit at column zero, which cannot happen
+          # inside an indented YAML block, and the file stops parsing.
+          $notes = @(
+            'Windows x64 installer.'
+            ''
+            'The build is unsigned, so SmartScreen shows "Windows protected your PC"'
+            'on first run: More info, then Run anyway.'
+            ''
+            'Install the hooks from the setup screen afterwards, and restart any'
+            'Claude Code session that is already open.'
+          ) -join "`n"
           gh release create "${{ github.ref_name }}" $installer --title "${{ github.ref_name }}" --notes $notes
