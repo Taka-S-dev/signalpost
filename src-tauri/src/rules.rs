@@ -103,7 +103,7 @@ impl Rule {
             }
         }
         if let Some(cwd) = &self.cwd {
-            if !same_path(cwd, &item.cwd) {
+            if !covers(cwd, &item.cwd) {
                 return false;
             }
         }
@@ -159,11 +159,22 @@ fn starts_with_word(command: &str, prefix: &str) -> bool {
     }
 }
 
-/// Windows paths differ in separator and case between hook payloads and the
-/// values we stored, so compare them leniently.
-fn same_path(a: &str, b: &str) -> bool {
+/// Whether a rule made in `rule_cwd` should answer for a call made in
+/// `call_cwd`.
+///
+/// A session started in a subdirectory reports that subdirectory, so a rule
+/// made at the repository root matched nothing from a session opened in
+/// `frontend/` — the rule read as covering "this project" and did not.
+/// Subdirectories are part of the project; siblings and parents are not.
+///
+/// Windows paths also differ in separator and case between hook payloads and
+/// the values we stored, so both sides are normalised first.
+fn covers(rule_cwd: &str, call_cwd: &str) -> bool {
     let norm = |s: &str| s.replace('\\', "/").trim_end_matches('/').to_lowercase();
-    norm(a) == norm(b)
+    let (rule, call) = (norm(rule_cwd), norm(call_cwd));
+    // The separator matters: without it `.../app` would also cover
+    // `.../app-secrets`, a different project that merely starts the same.
+    call == rule || call.starts_with(&format!("{rule}/"))
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -290,6 +301,33 @@ mod tests {
         assert!(rules.allows(&item("Read", "Read:b.rs", "C:/work/app")));
         assert!(!rules.allows(&item("Read", "Read:b.rs", "C:/work/other")));
         assert!(!rules.allows(&item("Write", "Write:b.rs", "C:/work/app")));
+    }
+
+    /// Sessions opened in a subdirectory report that subdirectory, which is
+    /// how a rule made at the repository root ended up matching nothing.
+    #[test]
+    fn a_project_rule_reaches_sessions_started_in_subdirectories() {
+        let mut rules = Rules::default();
+        rules.add(Rule::from_item(
+            &item("PowerShell", "PowerShell:npm test", "C:/work/app"),
+            Scope::ToolInProject,
+        ));
+
+        assert!(rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app/frontend")));
+        assert!(rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app/a/b")));
+    }
+
+    #[test]
+    fn a_project_rule_does_not_reach_its_parent_or_its_siblings() {
+        let mut rules = Rules::default();
+        rules.add(Rule::from_item(
+            &item("PowerShell", "PowerShell:npm test", "C:/work/app"),
+            Scope::ToolInProject,
+        ));
+
+        assert!(!rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work")));
+        // A neighbour whose name merely opens the same way.
+        assert!(!rules.allows(&item("PowerShell", "PowerShell:npm test", "C:/work/app-secrets")));
     }
 
     #[test]

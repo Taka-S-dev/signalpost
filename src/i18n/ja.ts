@@ -28,10 +28,11 @@ export const ja: Dictionary = {
     rememberWhere: "作ったルールは ⚑ ルール の画面（R キー）でいつでも削除できます",
     scopePrefix: "先頭が一致するコマンド（推奨）",
     scopeCall: (project: string) => `完全に同じ呼び出しだけ / ${project} のみ`,
-    scopeTool: (tool: string, project: string) => `${project} の ${tool} すべて`,
+    scopeTool: (tool: string, project: string) =>
+      `${project}（サブフォルダ含む）の ${tool} すべて`,
     prefixPlaceholder: "例: npm run build",
     prefixMatches: (prefix: string, project: string) =>
-      `${project} で「${prefix}」から始まるコマンドが対象になります。`,
+      `${project}（サブフォルダ含む）で「${prefix}」から始まるコマンドが対象になります。`,
     prefixEmpty: "対象にする先頭部分を入力してください。空のままでは何も一致しません。",
     ruleAdded: (tool: string) => `${tool} の自動許可ルールを作りました。`,
     undo: "取り消す",

@@ -31,10 +31,11 @@ export const en = {
     rememberWhere: "Rules you create can be deleted any time under ⚑ Rules (R)",
     scopePrefix: "commands starting with… (recommended)",
     scopeCall: (project: string) => `only a byte-identical call, in ${project}`,
-    scopeTool: (tool: string, project: string) => `every ${tool} call in ${project}`,
+    scopeTool: (tool: string, project: string) =>
+      `every ${tool} call in ${project} and below`,
     prefixPlaceholder: "e.g. npm run build",
     prefixMatches: (prefix: string, project: string) =>
-      `Covers commands in ${project} that start with "${prefix}".`,
+      `Covers commands in ${project} and below that start with "${prefix}".`,
     prefixEmpty: "Type the opening of the command to cover. Empty matches nothing.",
     ruleAdded: (tool: string) => `Standing rule created for ${tool}.`,
     undo: "Undo",
