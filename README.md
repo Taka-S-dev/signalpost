@@ -16,6 +16,15 @@ question, and a finished turn.">
 Blocked calls sit at the top, oldest first. `Y` allows, `N` denies, and the
 session carries on — the editor window is never opened.
 
+It also collapses to a bar, small enough to leave on screen all day. It names
+the session that has waited longest and how long it has been:
+
+<img src="docs/images/bar.png" width="210" alt="The collapsed bar: a coloured
+dot, the project name, a count of the others waiting, and the age of the
+oldest.">
+
+Point at it to peek, click to open.
+
 ## How it works
 
 Claude Code's `PermissionRequest` hook can be an HTTP hook, and whatever it
