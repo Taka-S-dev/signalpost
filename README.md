@@ -1,6 +1,9 @@
 # Signalpost
 
 [![CI](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml/badge.svg)](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Taka-S-dev/signalpost)](https://github.com/Taka-S-dev/signalpost/releases/latest)
+
+**[Download for Windows](https://github.com/Taka-S-dev/signalpost/releases/latest)** — installer or portable zip
 
 *[日本語版はこちら](README.ja.md)*
 
@@ -76,7 +79,7 @@ Nothing can end up stuck.
 
 ## Getting started
 
-Each [release](https://github.com/Taka-S-dev/signalpost/releases) carries two
+Each [release](https://github.com/Taka-S-dev/signalpost/releases/latest) carries two
 Windows x64 downloads:
 
 | | |

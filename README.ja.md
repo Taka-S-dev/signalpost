@@ -1,6 +1,9 @@
 # Signalpost
 
 [![CI](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml/badge.svg)](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Taka-S-dev/signalpost)](https://github.com/Taka-S-dev/signalpost/releases/latest)
+
+**[Windows 版をダウンロード](https://github.com/Taka-S-dev/signalpost/releases/latest)** — インストーラ / ポータブル zip
 
 並列で動かしている Claude Code の**承認待ちを 1 か所に集めて、そこで処理する**ための常駐アプリ。
 
@@ -66,7 +69,7 @@ Claude Code ◀──── 判断を返す ────────────
 
 ## 使い方
 
-各[リリース](https://github.com/Taka-S-dev/signalpost/releases)に Windows x64 用を 2 つ添付してある:
+各[リリース](https://github.com/Taka-S-dev/signalpost/releases/latest)に Windows x64 用を 2 つ添付してある:
 
 | | |
 | --- | --- |
