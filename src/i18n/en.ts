@@ -58,6 +58,10 @@ export const en = {
     dismissAll: (n: number) => `clear ${n}`,
     openEditor: "Go to window",
   },
+  errors: {
+    noWindow:
+      "No window for that session was found. A terminal titles its window after the shell, not the folder, so it cannot be matched — give the project a command under P to open something instead.",
+  },
   empty: {
     title: "All clear.",
     hint: "Approvals will queue up here.",

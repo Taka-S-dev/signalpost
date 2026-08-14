@@ -1,6 +1,7 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "./api";
+import { dictionary } from "./i18n";
 
 /**
  * The window's shape is decided in Rust, so what is under test here is only
@@ -17,10 +18,11 @@ vi.mock("@tauri-apps/api/event", () => ({
 vi.mock("./sound", () => ({ play: () => {} }));
 
 // Hoisted alongside the vi.mock call below, which runs before the imports.
-const { collapsePanel, expandPanel, showContextMenu } = vi.hoisted(() => ({
+const { collapsePanel, expandPanel, showContextMenu, focusEditor } = vi.hoisted(() => ({
   collapsePanel: vi.fn(() => Promise.resolve()),
   expandPanel: vi.fn(() => Promise.resolve()),
   showContextMenu: vi.fn(() => Promise.resolve()),
+  focusEditor: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("./api", async (original) => ({
@@ -28,7 +30,8 @@ vi.mock("./api", async (original) => ({
   api: {
     listItems: () => Promise.resolve([]),
     suggestPrefix: () => Promise.resolve(""),
-    getSettings: () => Promise.resolve({ ...DEFAULT_SETTINGS, sound: false, flash: false }),
+    getSettings: () =>
+      Promise.resolve({ ...DEFAULT_SETTINGS, sound: false, flash: false, lang: "ja" }),
     getSnooze: () => Promise.resolve(null),
     getMode: () => Promise.resolve("full"),
     activeShortcut: () => Promise.resolve("Alt+Space"),
@@ -46,10 +49,13 @@ vi.mock("./api", async (original) => ({
     collapsePanel,
     expandPanel,
     showContextMenu,
+    focusEditor,
+    dismiss: () => Promise.resolve(),
   },
 }));
 
-const settings = { ...DEFAULT_SETTINGS, sound: false, flash: false };
+const settings = { ...DEFAULT_SETTINGS, sound: false, flash: false, lang: "ja" as const };
+const t = dictionary("ja");
 
 const { default: App } = await import("./App");
 
@@ -225,5 +231,42 @@ describe("the bar standing out", () => {
     enterBarMode();
     expect(barClass()).not.toContain("is-insistent");
     expect(barClass()).not.toContain("is-waiting");
+  });
+});
+
+describe("jumping to a session's window", () => {
+  beforeEach(() => {
+    listeners.clear();
+    focusEditor.mockReset();
+  });
+
+  async function pressEnterOnARow() {
+    await mount();
+    act(() => listeners.get("inbox:changed")?.({ payload: queued("permission") }));
+    await act(async () => {});
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+  }
+
+  // Rust answers with a code when it cannot find the window; the sentence is
+  // written here so it comes out in the reader's language.
+  it("explains a jump that found nothing, in the reader's language", async () => {
+    focusEditor.mockImplementation(() => Promise.reject(new Error("no-window")));
+    await pressEnterOnARow();
+    expect(document.querySelector(".failure")?.textContent).toBe(t.errors.noWindow);
+  });
+
+  it("says nothing when the jump worked", async () => {
+    focusEditor.mockImplementation(() => Promise.resolve());
+    await pressEnterOnARow();
+    expect(document.querySelector(".failure")).toBeNull();
+  });
+
+  // Anything else is passed through rather than dressed up as this one.
+  it("passes an unrelated failure through unchanged", async () => {
+    focusEditor.mockImplementation(() => Promise.reject(new Error("that item is gone")));
+    await pressEnterOnARow();
+    expect(document.querySelector(".failure")?.textContent).toContain("that item is gone");
   });
 });

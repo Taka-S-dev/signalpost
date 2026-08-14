@@ -127,24 +127,52 @@ fn focus_editor(state: Shared, id: String) -> Result<(), String> {
 /// window at the moment the user clicks it.
 fn go_to(state: &Arc<AppState>, cwd: &str, project: &str) -> Result<(), String> {
     let explicit = state.has_open_command(cwd);
-    if !explicit {
-        if let Some(handle) = switcher::find_by_project(project) {
-            switcher::focus(handle)?;
-            if let Some(window) = ui::panel(state.app()) {
-                let _ = window.hide();
-            }
-            return Ok(());
-        }
-    }
+    // Only looked for when there is no command to run anyway.
+    let found = if explicit {
+        None
+    } else {
+        switcher::find_by_project(project)
+    };
 
-    // Either the user configured a command for this project, or nothing has
-    // the folder open and it has to be started.
-    ui::run_open_command(&state.open_command(cwd))?;
+    match jump(explicit, found) {
+        Jump::Focus(handle) => switcher::focus(handle)?,
+        Jump::Run => ui::run_open_command(&state.open_command(cwd))?,
+        Jump::Refuse => return Err(NO_WINDOW.into()),
+    }
     if let Some(window) = ui::panel(state.app()) {
         let _ = window.hide();
     }
     Ok(())
 }
+
+/// What pressing "go to window" should do.
+#[derive(Debug, PartialEq, Eq)]
+enum Jump {
+    Focus(isize),
+    Run,
+    Refuse,
+}
+
+/// Refuses rather than guessing when nothing matches.
+///
+/// Falling back to the default editor used to open the folder, which for a
+/// session running in a terminal meant a tab nobody asked for and has to be
+/// closed afterwards: "I could not find it" was being turned into "here is
+/// something else". Terminals title their windows after the shell or the
+/// running command, never the folder, so they never match and always took
+/// that path. A project that should open something can be given a command of
+/// its own, and that is honoured before any of this.
+fn jump(explicit: bool, found: Option<isize>) -> Jump {
+    match (explicit, found) {
+        (true, _) => Jump::Run,
+        (false, Some(handle)) => Jump::Focus(handle),
+        (false, None) => Jump::Refuse,
+    }
+}
+
+/// Returned when no window matches and the project has no command of its own.
+/// A code rather than a sentence: the UI writes the message, in its language.
+const NO_WINDOW: &str = "no-window";
 
 /// Gets the panel out of the way.
 ///
@@ -977,6 +1005,26 @@ mod tests {
     fn asking_for_the_panel_outright_always_opens_it() {
         assert!(hover_may_open(false, true));
         assert!(hover_may_open(false, false));
+    }
+
+    /// The whole point of the change: a session whose window cannot be found
+    /// gets an answer, not a different window opened on its behalf.
+    #[test]
+    fn a_window_that_cannot_be_found_opens_nothing() {
+        assert_eq!(jump(false, None), Jump::Refuse);
+    }
+
+    #[test]
+    fn a_window_that_is_found_is_brought_forward() {
+        assert_eq!(jump(false, Some(42)), Jump::Focus(42));
+    }
+
+    /// A command set for the project is a decision already made, so it runs
+    /// whether or not anything is on screen.
+    #[test]
+    fn a_project_with_its_own_command_still_runs_it() {
+        assert_eq!(jump(true, None), Jump::Run);
+        assert_eq!(jump(true, Some(42)), Jump::Run);
     }
 
     #[test]

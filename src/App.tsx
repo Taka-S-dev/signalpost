@@ -169,8 +169,12 @@ export default function App() {
         if (item.kind !== "permission") void api.dismiss(item.id);
       })
       // Swallowing this made a failed jump indistinguishable from a working
-      // one that focused nothing.
-      .catch((e) => setError(String(e)));
+      // one that focused nothing. Rust answers with a code for the one case
+      // the reader can act on, so the sentence can be written here in their
+      // language.
+      .catch((e) =>
+        setError(String(e).includes("no-window") ? t.errors.noWindow : String(e)),
+      );
   }, [selected]);
 
   useEffect(() => {

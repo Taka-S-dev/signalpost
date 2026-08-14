@@ -147,8 +147,16 @@ both persist in `projects.json`.
 Identity is keyed on the folder rather than the session id, because that is
 what survives a restart and what maps one-to-one to an editor window.
 
-`Enter` runs `code -r "{cwd}"` by default. Sessions run from a terminal can
-use something else — `wt -d "{cwd}"`, for instance — set per project.
+`Enter` brings that session's window forward. The match is on the window
+title, which editors build from the folder name — so an editor window is found
+and raised.
+
+A terminal titles its window after the shell or the command running in it,
+never the folder, so a session started from one cannot be matched. `Enter`
+then says so and opens nothing: guessing used to open the folder in the
+default editor, which left a tab to close every time. Give the project a
+command under `P` if it should open something instead — `code -r "{cwd}"`,
+`wt -d "{cwd}"` — and that runs in place of the search.
 
 ### Highlighting risky calls
 
