@@ -14,9 +14,9 @@ mod ui;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tauri::menu::{Menu, MenuItem};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 use model::{Decision, Item};
 use profiles::ResolvedProfile;
@@ -687,6 +687,7 @@ fn handle_menu(app: &tauri::AppHandle, id: &str) {
             }
             refresh_tray_menu(app);
         }
+        "keep-open" => toggle_keep_open(app),
         "snooze" => toggle_snooze(app),
         "reset" => {
             if let Some(state) = app.try_state::<Arc<AppState>>() {
@@ -720,10 +721,23 @@ fn tray_menu(app: &tauri::AppHandle, strings: &ui::TrayStrings) -> tauri::Result
     };
 
     let mode = MenuItem::with_id(app, "mode", mode_label, true, None::<&str>)?;
+    // Opening the panel and keeping it open are different wishes, and the
+    // second was reachable only from a settings screen you have to open the
+    // panel to see. Checkable, because it is a state and not a one-off.
+    let keep_open = CheckMenuItem::with_id(
+        app,
+        "keep-open",
+        &strings.keep_open,
+        true,
+        app.try_state::<Arc<AppState>>()
+            .map(|s| s.settings().keep_open)
+            .unwrap_or(false),
+        None::<&str>,
+    )?;
     let snooze = MenuItem::with_id(app, "snooze", snooze_label, true, None::<&str>)?;
     let reset = MenuItem::with_id(app, "reset", &strings.reset, true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", &strings.quit, true, None::<&str>)?;
-    Menu::with_items(app, &[&mode, &snooze, &reset, &quit])
+    Menu::with_items(app, &[&mode, &keep_open, &snooze, &reset, &quit])
 }
 
 /// True only when the panel is on screen at full size. A hidden window is not
@@ -756,6 +770,21 @@ pub(crate) fn refresh_tray_menu(app: &tauri::AppHandle) {
             let _ = tray.set_menu(Some(menu));
         }
     }
+}
+
+/// Flips "keep the list open" from the menu.
+///
+/// The setting also lives on the settings screen, so the web view is told
+/// rather than left showing what it read at startup.
+fn toggle_keep_open(app: &tauri::AppHandle) {
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+    let mut settings = state.settings();
+    settings.keep_open = !settings.keep_open;
+    let saved = state.set_settings(settings);
+    let _ = app.emit("settings:changed", saved);
+    refresh_tray_menu(app);
 }
 
 /// Flips the suppression and rebuilds the menu so its label matches.

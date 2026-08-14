@@ -104,6 +104,8 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export interface TrayStrings {
   show: string;
+  bar: string;
+  keepOpen: string;
   snooze: string;
   unsnooze: string;
   reset: string;

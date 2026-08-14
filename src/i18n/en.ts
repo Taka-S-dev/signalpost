@@ -222,6 +222,7 @@ export const en = {
   tray: {
     show: "Open panel",
     bar: "Collapse to bar",
+    keepOpen: "Keep the list open",
     snooze: "Stop popping up (30 min)",
     unsnooze: "Pop up again",
     reset: "Reset position",

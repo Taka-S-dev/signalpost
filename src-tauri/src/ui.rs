@@ -191,6 +191,9 @@ pub fn expand(app: &AppHandle) {
 pub struct TrayStrings {
     pub show: String,
     pub bar: String,
+    /// Ticked while the panel is told to stay open. A mode rather than an
+    /// action, so the menu shows its state instead of a verb.
+    pub keep_open: String,
     /// Reachable from the tray because the panel is usually hidden at the
     /// moment someone wants it to stop appearing.
     pub snooze: String,
@@ -209,6 +212,7 @@ impl Default for TrayStrings {
         TrayStrings {
             show: "Open panel".into(),
             bar: "Collapse to bar".into(),
+            keep_open: "Keep the list open".into(),
             snooze: "Stop popping up (30 min)".into(),
             unsnooze: "Pop up again".into(),
             reset: "Reset position".into(),

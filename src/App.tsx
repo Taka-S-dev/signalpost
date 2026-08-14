@@ -82,6 +82,9 @@ export default function App() {
     const snooze = listen<number | null>("snooze:changed", (e) => setSnoozeUntil(e.payload));
     // The window is resized by Rust, so the layout follows rather than leads.
     const modeEvent = listen<"full" | "pill">("mode:changed", (e) => setMode(e.payload));
+    // The menu can change a setting the settings screen is showing, so what
+    // is on screen has to follow rather than keep what it read at startup.
+    const settingsEvent = listen<Settings>("settings:changed", (e) => setSettings(e.payload));
     void api.serverPort().then(setPort);
     // Polled, not read once: a hook pointed at another copy of the app is
     // refused at some later moment, and the whole failure is that nothing
@@ -102,6 +105,7 @@ export default function App() {
       clearInterval(poll);
       void snooze.then((un) => un());
       void modeEvent.then((un) => un());
+      void settingsEvent.then((un) => un());
     };
   }, []);
 

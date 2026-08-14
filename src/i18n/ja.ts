@@ -214,6 +214,7 @@ export const ja: Dictionary = {
   tray: {
     show: "パネルを開く",
     bar: "バーに畳む",
+    keepOpen: "リストを開いたままにする",
     snooze: "30分ポップアップしない",
     unsnooze: "ポップアップを再開",
     reset: "位置をリセット",
