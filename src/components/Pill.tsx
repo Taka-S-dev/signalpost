@@ -28,6 +28,11 @@ export function Pill({ items, onPeek, onCancelPeek }: Props) {
   // `items` is already ordered blocked-first, oldest-first.
   const lead = (hot ? pending : items)[0];
   const rest = (hot ? pending.length : items.length) - 1;
+  // Counted separately, because the bar used to describe only the blocked
+  // calls: a session that had finished vanished from it entirely for as long
+  // as anything was waiting, which is most of the time when several are
+  // running. It was not quiet, it was absent.
+  const done = hot ? items.filter((i) => i.kind === "completed").length : 0;
   // The bar is what is on screen while nobody is looking at the panel, so it
   // is where being ignored has to become visible.
   const stale = hot && Date.now() - lead.createdAt > 3 * 60_000;
@@ -58,6 +63,13 @@ export function Pill({ items, onPeek, onCancelPeek }: Props) {
           {lead ? lead.label || lead.project : t.header.idle}
         </span>
         {rest > 0 && <span className="pill-more">+{rest}</span>}
+        {/* Dimmer than the waiting count and marked, so a glance separates
+            "still owes you an answer" from "finished while you were away". */}
+        {done > 0 && (
+          <span className="pill-done" title={t.pill.done(done)}>
+            ✓{done}
+          </span>
+        )}
         <span className="pill-age">{lead ? elapsed(lead.createdAt, t.time) : ""}</span>
         <span className="pill-open">▸</span>
       </button>

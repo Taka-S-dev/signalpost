@@ -199,6 +199,7 @@ export const en = {
     drag: "Drag to move (does not open)",
     collapse: "Collapse to the bar (C) — click the bar or press Alt+Space to open it again",
     info: (n: number) => `${n} new`,
+    done: (n: number) => (n === 1 ? "1 session finished" : `${n} sessions finished`),
   },
   snooze: {
     active: (min: number) => `${min}m`,

@@ -267,6 +267,17 @@ body {
   color: var(--text-dim);
 }
 
+/* Quieter than the waiting count, and ticked rather than plus-signed: the
+   two numbers on the bar mean different things and must not read as one. */
+.pill-done {
+  flex: none;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  opacity: 0.75;
+}
+
 .pill-age {
   flex: 1;
   font-variant-numeric: tabular-nums;

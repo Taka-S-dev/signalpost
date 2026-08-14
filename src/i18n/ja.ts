@@ -191,6 +191,7 @@ export const ja: Dictionary = {
     drag: "ドラッグで移動（ここでは開かない）",
     collapse: "バーに畳む（C）— バーをクリックするか Alt+Space で戻る",
     info: (n: number) => `${n} 件`,
+    done: (n: number) => `${n} 件が完了`,
   },
   snooze: {
     active: (min: number) => `残り${min}分`,
