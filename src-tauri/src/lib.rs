@@ -167,15 +167,27 @@ fn hide_panel(state: Shared) {
 /// events, which cannot tell a tooltip apart from a real departure.
 #[tauri::command]
 fn expand_panel(state: Shared, peek: Option<bool>) {
-    // "Keep the list open" has to win over every automatic collapse, not just
-    // the one that fires when the queue drains. Opening by hover would
-    // otherwise still arm the watcher and close it on the way out.
-    let peek = peek.unwrap_or(false) && !state.settings().keep_open;
+    let peek = peek.unwrap_or(false);
+    if !hover_may_open(peek, state.settings().keep_open) {
+        return;
+    }
     state.set_peeking(peek);
     ui::reveal(state.app());
     if peek {
         ui::watch_peek(state.app());
     }
+}
+
+/// Whether a request to open the panel should be honoured.
+///
+/// "Keep the list open" switches off the closing half of a peek, and what is
+/// left is not a peek: the panel opens when the pointer brushes the bar and
+/// never closes again. Collapsing to the bar then lasted only until the next
+/// time the pointer went near it, which is what made the menu item look
+/// pointless. Hovering does nothing while the setting is on; clicking the bar
+/// still opens it, and that is a thing you meant to do.
+fn hover_may_open(peek: bool, keep_open: bool) -> bool {
+    !(peek && keep_open)
 }
 
 /// Stops the peek entirely. Used when a text field takes focus: typing must
@@ -945,6 +957,26 @@ mod tests {
             std::env::temp_dir().join(PRODUCT_DIR)
         );
         std::fs::remove_dir_all(&exe).ok();
+    }
+
+    /// Collapsing by hand has to survive the pointer coming back, or the
+    /// menu item that does it is decoration.
+    #[test]
+    fn hovering_does_not_reopen_a_bar_while_the_list_is_kept_open() {
+        assert!(!hover_may_open(true, true));
+    }
+
+    #[test]
+    fn hovering_still_opens_the_bar_the_rest_of_the_time() {
+        assert!(hover_may_open(true, false));
+    }
+
+    /// Clicking is not a hover. Whatever the setting says about brushing past,
+    /// asking for the panel has to produce the panel.
+    #[test]
+    fn asking_for_the_panel_outright_always_opens_it() {
+        assert!(hover_may_open(false, true));
+        assert!(hover_may_open(false, false));
     }
 
     #[test]
