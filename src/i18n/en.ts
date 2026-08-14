@@ -23,6 +23,12 @@ export const en = {
     needsInput: "question",
     completed: "done",
   },
+  /** Stands in when an event arrives with no text of its own. */
+  summaryFor: {
+    permission: "waiting for an answer",
+    needsInput: "the session is asking something",
+    completed: "the session finished its turn",
+  },
   actions: {
     allow: "Allow",
     deny: "Deny",

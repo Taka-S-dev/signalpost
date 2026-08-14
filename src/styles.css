@@ -758,6 +758,13 @@ h2.secondary {
   white-space: nowrap;
 }
 
+/* Wording this app supplied, not text the session sent. Dimmed so a real
+   message is never mistaken for one of these. */
+.summary.is-implied {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 .nav-count {
   padding: 0 var(--space-1);
   border-radius: var(--radius-md);

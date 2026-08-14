@@ -20,6 +20,11 @@ export const ja: Dictionary = {
     needsInput: "質問",
     completed: "完了",
   },
+  summaryFor: {
+    permission: "返事を待っています",
+    needsInput: "セッションが質問しています",
+    completed: "セッションがターンを終えました",
+  },
   actions: {
     allow: "許可",
     deny: "拒否",

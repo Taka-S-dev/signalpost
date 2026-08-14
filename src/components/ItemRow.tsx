@@ -82,7 +82,10 @@ export function ItemRow({
       aria-current={selected}
     >
       <div className="row-head">
-        <span className="project" style={{ color: stripe }}>
+        {/* The stripe may be a divider colour, which is legible as a 3px bar
+            and not as text. A finished row is quiet because it is dimmed, not
+            because its name is the same shade as the background. */}
+        <span className="project" style={{ color: item.color }}>
           {item.label || item.project}
         </span>
         {/* Only Claude rows can be answered here, so the source has to be
@@ -104,7 +107,12 @@ export function ItemRow({
 
       <div className="row-body">
         {item.toolName && <span className="tool">{item.toolName}</span>}
-        <span className="summary">{item.summary}</span>
+        {/* A turn reported by the Stop hook carries no text of its own — the
+            payload has no message field — so the row would otherwise be a
+            project name and two buttons with nothing said in between. */}
+        <span className={`summary ${item.summary ? "" : "is-implied"}`}>
+          {item.summary || t.summaryFor[item.kind]}
+        </span>
       </div>
 
       {selected && <Detail item={item} />}
