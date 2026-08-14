@@ -31,9 +31,9 @@ session carries on — the editor window is never opened.
 It also collapses to a bar, small enough to leave on screen all day. It names
 the session that has waited longest and how long it has been:
 
-<img src="docs/images/bar.png" width="210" alt="The collapsed bar: a coloured
-dot, the project name, a count of the others waiting, and the age of the
-oldest.">
+<img src="docs/images/bar.png" width="300" alt="The collapsed bar on a
+desktop, floating above a window: a coloured dot, the project name, a count of
+the others waiting, and the age of the oldest.">
 
 Point at it to peek, click to open.
 
