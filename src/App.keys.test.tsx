@@ -17,9 +17,10 @@ vi.mock("@tauri-apps/api/event", () => ({
 vi.mock("./sound", () => ({ play: () => {} }));
 
 // Hoisted alongside the vi.mock call below, which runs before the imports.
-const { collapsePanel, expandPanel } = vi.hoisted(() => ({
+const { collapsePanel, expandPanel, showContextMenu } = vi.hoisted(() => ({
   collapsePanel: vi.fn(() => Promise.resolve()),
   expandPanel: vi.fn(() => Promise.resolve()),
+  showContextMenu: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("./api", async (original) => ({
@@ -43,6 +44,7 @@ vi.mock("./api", async (original) => ({
     setTrayStrings: () => Promise.resolve(),
     collapsePanel,
     expandPanel,
+    showContextMenu,
   },
 }));
 
@@ -74,6 +76,7 @@ describe("the collapse key", () => {
     listeners.clear();
     collapsePanel.mockClear();
     expandPanel.mockClear();
+    showContextMenu.mockClear();
   });
 
   it("collapses the panel", async () => {
@@ -93,5 +96,46 @@ describe("the collapse key", () => {
     pressC();
     expect(expandPanel).toHaveBeenCalledTimes(1);
     expect(collapsePanel).not.toHaveBeenCalled();
+  });
+});
+
+describe("right-clicking", () => {
+  beforeEach(() => {
+    listeners.clear();
+    showContextMenu.mockClear();
+  });
+
+  // Without this the web view raises Edge's own menu — reload, save as,
+  // print — over what is meant to look like a native panel.
+  it("raises the app's menu instead of the web view's", async () => {
+    await mount();
+
+    const event = new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 34,
+    });
+    act(() => {
+      document.body.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(showContextMenu).toHaveBeenCalledWith(12, 34);
+  });
+
+  // The bar is the surface people actually right-click: the tray icon sits in
+  // the Windows 11 overflow, hidden, which is why the bar exists at all.
+  it("works in the bar as well as the panel", async () => {
+    await mount();
+    enterBarMode();
+
+    act(() => {
+      document.body.dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 5, clientY: 6 }),
+      );
+    });
+
+    expect(showContextMenu).toHaveBeenCalledWith(5, 6);
   });
 });

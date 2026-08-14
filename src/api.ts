@@ -192,6 +192,10 @@ export const api = {
   setShortcut: (shortcut: string) => invoke<string | null>("set_shortcut", { shortcut }),
   getSnooze: () => invoke<number | null>("get_snooze"),
   toggleSnooze: () => invoke<number | null>("toggle_snooze_command"),
+  // The tray's own menu, raised over the panel at the pointer. Native rather
+  // than drawn here: the bar is 232px wide and would clip it.
+  showContextMenu: (x: number, y: number) => invoke<void>("show_context_menu", { x, y }),
+  quit: () => invoke<void>("quit_app"),
   hooksStatus: () => invoke<HookStatus>("hooks_status"),
   installHooks: () => invoke<string>("install_hooks"),
   uninstallHooks: () => invoke<void>("uninstall_hooks"),

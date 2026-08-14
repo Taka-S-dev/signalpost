@@ -337,6 +337,32 @@ fn default_open_command() -> &'static str {
     profiles::DEFAULT_OPEN_COMMAND
 }
 
+/// Raises the tray's menu over the panel, at the pointer.
+///
+/// Built by the same function the tray uses rather than mirrored in HTML: a
+/// copy would drift, and the panel is 232px wide in the bar, which would clip
+/// a menu drawn inside the web view.
+#[tauri::command]
+fn show_context_menu(app: tauri::AppHandle, x: f64, y: f64) -> Result<(), String> {
+    use tauri::menu::ContextMenu;
+
+    let strings = app
+        .try_state::<Arc<AppState>>()
+        .map(|s| s.tray_strings())
+        .unwrap_or_default();
+    let menu = tray_menu(&app, &strings).map_err(|e| e.to_string())?;
+    let window = ui::panel(&app).ok_or("the panel is gone")?;
+    menu.popup_at(window.as_ref().window(), tauri::LogicalPosition::new(x, y))
+        .map_err(|e| e.to_string())
+}
+
+/// Ends the app. The panel's menu offers it because the tray icon is hidden
+/// in the Windows 11 overflow by default, so it cannot be the only way out.
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
 /// Puts the panel back at its default dock, for when a remembered placement
 /// ends up somewhere unusable.
 #[tauri::command]
@@ -484,6 +510,8 @@ pub fn run() {
             set_shortcut,
             get_snooze,
             toggle_snooze_command,
+            show_context_menu,
+            quit_app,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -629,24 +657,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .tooltip(&defaults.idle)
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .on_menu_event(|app, event| match event.id.as_ref() {
-            "mode" => {
-                if in_panel_mode(app) {
-                    ui::show_pill(app)
-                } else {
-                    ui::reveal(app)
-                }
-                refresh_tray_menu(app);
-            }
-            "snooze" => toggle_snooze(app),
-            "reset" => {
-                if let Some(state) = app.try_state::<Arc<AppState>>() {
-                    reset_panel_position(state);
-                }
-            }
-            "quit" => app.exit(0),
-            _ => {}
-        })
+        .on_menu_event(|app, event| handle_menu(app, event.id.as_ref()))
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -660,6 +671,31 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .build(app)?;
 
     Ok(())
+}
+
+/// Acts on a menu choice, wherever the menu was raised.
+///
+/// The tray and the panel's own menu are the same menu, so they must not be
+/// able to drift into meaning different things by the same name.
+fn handle_menu(app: &tauri::AppHandle, id: &str) {
+    match id {
+        "mode" => {
+            if in_panel_mode(app) {
+                ui::show_pill(app)
+            } else {
+                ui::reveal(app)
+            }
+            refresh_tray_menu(app);
+        }
+        "snooze" => toggle_snooze(app),
+        "reset" => {
+            if let Some(state) = app.try_state::<Arc<AppState>>() {
+                reset_panel_position(state);
+            }
+        }
+        "quit" => app.exit(0),
+        _ => {}
+    }
 }
 
 fn tray_menu(app: &tauri::AppHandle, strings: &ui::TrayStrings) -> tauri::Result<Menu<tauri::Wry>> {

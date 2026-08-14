@@ -252,6 +252,20 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [view, selected, keys, mode, move, resolve, dismiss, openEditor]);
 
+  // Right-clicking anywhere used to raise the web view's own menu — reload,
+  // save as, print — which is Edge's, not this app's. Suppressing it is not
+  // enough on its own: right-clicking a tray-like bar is a real gesture, and
+  // it has to reach the same menu the tray icon does. Ctrl+C still copies a
+  // selection, which is the one thing the browser menu was good for.
+  useEffect(() => {
+    const onMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      void api.showContextMenu(event.clientX, event.clientY);
+    };
+    document.addEventListener("contextmenu", onMenu);
+    return () => document.removeEventListener("contextmenu", onMenu);
+  }, []);
+
   const t = useMemo(() => dictionary(settings.lang), [settings.lang]);
 
   // Pointing at the bar opens it. Closing again is watched natively against
