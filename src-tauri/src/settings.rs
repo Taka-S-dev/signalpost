@@ -38,6 +38,14 @@ pub struct Settings {
     /// bar when the queue empties.
     #[serde(default)]
     pub keep_open: bool,
+    /// Start the bar's slow pulse as soon as something is waiting, rather
+    /// than only once it has been ignored for a few minutes.
+    ///
+    /// The rate is not adjustable on purpose: anything flashing more than
+    /// three times a second is a seizure risk (WCAG 2.3.1), and this window
+    /// is always on top, so a viewer cannot look away from it.
+    #[serde(default)]
+    pub emphasize: bool,
     /// Global shortcut that shows the panel, e.g. `Alt+Space`.
     #[serde(default = "default_shortcut")]
     pub shortcut: String,
@@ -100,6 +108,7 @@ impl Default for Settings {
             toast: true,
             hover_expand: true,
             keep_open: false,
+            emphasize: false,
             shortcut: DEFAULT_SHORTCUT.to_string(),
         }
     }

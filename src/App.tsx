@@ -364,7 +364,13 @@ export default function App() {
     // after the drag grip, so a pulse set there left the left end of the bar
     // dark and began partway across with a rounded edge of its own.
     const oldest = items.find((i) => i.kind === "permission");
-    const waiting = oldest && Date.now() - oldest.createdAt > 3 * 60_000 ? "is-waiting" : "";
+    const waiting = oldest
+      ? settings.emphasize
+        ? "is-insistent"
+        : Date.now() - oldest.createdAt > 3 * 60_000
+          ? "is-waiting"
+          : ""
+      : "";
     return (
       <I18nContext.Provider value={t}>
         <main key="compact" className={`app compact ${waiting} ${pulse ? `pulse-${pulse}` : ""}`}>

@@ -225,6 +225,12 @@ export function Setup({
         onChange={(keepOpen) => onSettings({ ...settings, keepOpen })}
       />
       <Toggle
+        label={t.setup.emphasize}
+        hint={t.setup.emphasizeHint}
+        checked={settings.emphasize}
+        onChange={(emphasize) => onSettings({ ...settings, emphasize })}
+      />
+      <Toggle
         label={t.setup.hoverExpand}
         hint={t.setup.hoverExpandHint}
         checked={settings.hoverExpand}

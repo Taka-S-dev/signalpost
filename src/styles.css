@@ -237,6 +237,15 @@ body {
   animation: bar-waiting 2.6s ease-in-out infinite;
 }
 
+/* Asked for, so it may insist — but by how far it swings, not by how often.
+   The rate is barely up (2.2s, 0.45Hz); what changes is the depth of the
+   breath and a rim that appears with it. Rate is the wrong lever: past three
+   flashes a second it is a seizure risk (WCAG 2.3.1), and this window sits
+   above everything, so it cannot be looked away from. */
+.app.compact.is-insistent {
+  animation: bar-insisting 2.2s ease-in-out infinite;
+}
+
 @keyframes bar-waiting {
   0%,
   100% {
@@ -248,7 +257,7 @@ body {
 }
 
 /* An arrival takes the bar over for the second it lasts. Same specificity as
-   the waiting pulse above, so it has to sit after it to win.
+   the waiting pulses above, so it has to sit after them to win.
 
    The full panel can announce an arrival with a border pulse because it is
    large. The bar has almost no edge to light up, and on a dark desktop a thin
@@ -262,6 +271,18 @@ body {
 .app.compact.pulse-cleared {
   border-color: var(--ok);
   animation: bar-done 1.1s ease-out;
+}
+
+@keyframes bar-insisting {
+  0%,
+  100% {
+    background: var(--bg);
+    box-shadow: none;
+  }
+  50% {
+    background: rgb(221 161 63 / 0.34);
+    box-shadow: 0 0 0 1px rgb(221 161 63 / 0.75), 0 0 14px rgb(221 161 63 / 0.35);
+  }
 }
 
 .pill-more {

@@ -27,6 +27,7 @@ vi.mock("./api", async (original) => ({
   ...(await original<typeof import("./api")>()),
   api: {
     listItems: () => Promise.resolve([]),
+    suggestPrefix: () => Promise.resolve(""),
     getSettings: () => Promise.resolve({ ...DEFAULT_SETTINGS, sound: false, flash: false }),
     getSnooze: () => Promise.resolve(null),
     getMode: () => Promise.resolve("full"),
@@ -47,6 +48,8 @@ vi.mock("./api", async (original) => ({
     showContextMenu,
   },
 }));
+
+const settings = { ...DEFAULT_SETTINGS, sound: false, flash: false };
 
 const { default: App } = await import("./App");
 
@@ -137,5 +140,90 @@ describe("right-clicking", () => {
     });
 
     expect(showContextMenu).toHaveBeenCalledWith(5, 6);
+  });
+});
+
+/** A row, as Rust would push it. */
+function queued(kind: "permission" | "completed", ageMs = 0) {
+  return [
+    {
+      id: "1",
+      kind,
+      agent: "claude",
+      sessionId: "web-app",
+      cwd: "C:/demo/web-app",
+      project: "web-app",
+      label: "web-app",
+      color: "#8ea3c4",
+      toolName: kind === "permission" ? "Bash" : "",
+      summary: "",
+      detail: null,
+      detailKind: "text",
+      risk: null,
+      repeat: 1,
+      signature: "",
+      createdAt: Date.now() - ageMs,
+    },
+  ];
+}
+
+describe("the bar standing out", () => {
+  beforeEach(() => {
+    listeners.clear();
+  });
+
+  function barClass() {
+    return document.querySelector("main.compact")?.className ?? "";
+  }
+
+  // The pulse is set on the window, not on the button inside it: the button
+  // starts after the drag grip, so setting it there left the left end of the
+  // bar dark and began the wash partway across.
+  it("stays calm while a row is still fresh", async () => {
+    await mount();
+    act(() => listeners.get("inbox:changed")?.({ payload: queued("permission") }));
+    await act(async () => {});
+    enterBarMode();
+    expect(barClass()).not.toContain("is-waiting");
+    expect(barClass()).not.toContain("is-insistent");
+  });
+
+  it("breathes once a row has been ignored for minutes", async () => {
+    await mount();
+    act(() => listeners.get("inbox:changed")?.({ payload: queued("permission", 4 * 60_000) }));
+    await act(async () => {});
+    enterBarMode();
+    expect(barClass()).toContain("is-waiting");
+  });
+
+  it("insists from the first second when asked to", async () => {
+    await mount();
+    // Rust announces the change; the screen follows rather than keeping what
+    // it read at startup.
+    act(() => listeners.get("settings:changed")?.({ payload: { ...settings, emphasize: true } }));
+    act(() => listeners.get("inbox:changed")?.({ payload: queued("permission") }));
+    await act(async () => {});
+    enterBarMode();
+    expect(barClass()).toContain("is-insistent");
+  });
+
+  // Nothing is blocked, so nothing is being waited on.
+  it("says nothing when the queue is empty", async () => {
+    await mount();
+    enterBarMode();
+    expect(barClass()).not.toContain("is-waiting");
+    expect(barClass()).not.toContain("is-insistent");
+  });
+
+  // A finished turn is news, not a session held up. Insisting about it would
+  // make the pulse mean two different things at once.
+  it("stays calm for finished rows even with the setting on", async () => {
+    await mount();
+    act(() => listeners.get("settings:changed")?.({ payload: { ...settings, emphasize: true } }));
+    act(() => listeners.get("inbox:changed")?.({ payload: queued("completed") }));
+    await act(async () => {});
+    enterBarMode();
+    expect(barClass()).not.toContain("is-insistent");
+    expect(barClass()).not.toContain("is-waiting");
   });
 });

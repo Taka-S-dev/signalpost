@@ -65,6 +65,7 @@ export interface Settings {
   toast: boolean;
   hoverExpand: boolean;
   keepOpen: boolean;
+  emphasize: boolean;
   shortcut: string;
 }
 
@@ -99,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   toast: true,
   hoverExpand: true,
   keepOpen: false,
+  emphasize: false,
   shortcut: "Alt+Space",
 };
 
