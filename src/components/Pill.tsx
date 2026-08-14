@@ -33,9 +33,6 @@ export function Pill({ items, onPeek, onCancelPeek }: Props) {
   // as anything was waiting, which is most of the time when several are
   // running. It was not quiet, it was absent.
   const done = hot ? items.filter((i) => i.kind === "completed").length : 0;
-  // The bar is what is on screen while nobody is looking at the panel, so it
-  // is where being ignored has to become visible.
-  const stale = hot && Date.now() - lead.createdAt > 3 * 60_000;
 
   return (
     <>
@@ -50,7 +47,7 @@ export function Pill({ items, onPeek, onCancelPeek }: Props) {
         ⠿
       </span>
       <button
-        className={`pill ${hot ? "is-hot" : ""} ${stale ? "is-stale" : ""}`}
+        className={`pill ${hot ? "is-hot" : ""}`}
         onClick={() => void api.expandPanel()}
         onMouseEnter={onPeek}
         title={t.pill.hint}

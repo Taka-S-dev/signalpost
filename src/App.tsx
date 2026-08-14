@@ -360,9 +360,14 @@ export default function App() {
       : null;
 
   if (mode === "pill") {
+    // On the window rather than on the button inside it: the button starts
+    // after the drag grip, so a pulse set there left the left end of the bar
+    // dark and began partway across with a rounded edge of its own.
+    const oldest = items.find((i) => i.kind === "permission");
+    const waiting = oldest && Date.now() - oldest.createdAt > 3 * 60_000 ? "is-waiting" : "";
     return (
       <I18nContext.Provider value={t}>
-        <main key="compact" className={`app compact ${pulse ? `pulse-${pulse}` : ""}`}>
+        <main key="compact" className={`app compact ${waiting} ${pulse ? `pulse-${pulse}` : ""}`}>
           <Pill
             items={items}
             onPeek={settings.hoverExpand ? peek : cancelPeek}
