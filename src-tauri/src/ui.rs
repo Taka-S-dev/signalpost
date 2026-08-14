@@ -6,7 +6,7 @@ use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewWi
 
 use crate::model::{Item, ItemKind};
 use crate::settings::PopupWhen;
-use crate::state::AppState;
+use crate::state::{AppState, DEFAULT_HEIGHT, DEFAULT_WIDTH};
 
 pub const PANEL_LABEL: &str = "panel";
 const EDGE_MARGIN: f64 = 16.0;
@@ -169,7 +169,14 @@ pub fn expand(app: &AppHandle) {
     let _ = app.emit("mode:changed", "full");
     if let Some(state) = app.try_state::<Arc<AppState>>() {
         state.set_pill(false);
+        state.suppress_geometry_saves(600);
     }
+
+    // The window is the bar's size when this runs, and `place` only restores a
+    // size the user chose — with nothing remembered it docks whatever is there.
+    // Growing back to the default first is what stops the panel opening at the
+    // bar's width, with its header on top of itself.
+    resize(&window, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     place(app, &window);
     let _ = window.show();
 }
