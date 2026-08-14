@@ -78,6 +78,14 @@ pub fn watch_peek(app: &AppHandle) {
             if !state.is_peeking() {
                 return;
             }
+            // Read every time rather than once at the start. A watch armed by
+            // a hover keeps running, so turning "keep the list open" on while
+            // the panel is already open would otherwise be ignored until the
+            // next time it opens: it collapsed once, then behaved.
+            if state.settings().keep_open {
+                state.set_peeking(false);
+                return;
+            }
             let Some(window) = panel(&app) else { return };
 
             match pointer_inside(&window) {
