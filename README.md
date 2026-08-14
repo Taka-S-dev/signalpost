@@ -35,7 +35,9 @@ the session that has waited longest and how long it has been:
 desktop, floating above a window: a coloured dot, the project name, a count of
 the others waiting, and the age of the oldest.">
 
-Point at it to peek, click to open.
+Point at it to peek, click to open. The two counts are kept apart: `+N` is
+how many more are still waiting on you, `✓N` how many finished while you were
+looking elsewhere. Only the first is asking for anything.
 
 ## How it works
 
@@ -174,11 +176,17 @@ that decides what is safe. Read the command.
 | Flash | Amber on arrival, green when the last row clears | on |
 | Hide when empty | Collapse the panel at zero rows | off |
 | Keep the list open | Never collapse on its own | off |
+| Stand out while something waits | Draw attention at once, not after three minutes | off |
 | Background opacity | 40–100%. Text and borders stay opaque | 100% |
 
 "Hide when empty" is off by default because a window that disappears and
 reappears on its own reads as flicker. The flash acknowledges the clear
 instead.
+
+"Stand out while something waits" deepens the bar's pulse and gives it a rim
+rather than speeding it up. Rate is the wrong lever: past three flashes a
+second is a seizure risk, and this window sits above everything, so it cannot
+be looked away from. The cycle stays at roughly two seconds either way.
 
 "Keep the list open" is also on the right-click menu, since deciding you want
 the panel to stay is something you do while looking at the bar. While it is on,
