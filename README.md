@@ -118,12 +118,18 @@ take keyboard focus**, so it never interrupts what you are typing. Press
 | `Shift+D` | Clear the finished rows |
 | `W` / `P` / `R` / `S` | Windows / colors / rules / settings |
 | `M` | Stop popping up for 30 minutes |
-| `C` | Collapse to the bar |
+| `C` | Collapse to the bar, and open it again from there |
 | `Esc` | Hide the panel; from any other view, go back to the inbox |
 | `?` | Show this list in the app |
 
 No key creates a standing rule. Making a call permanent should not be one
 keystroke away from answering it once — tick the checkbox on the row instead.
+
+Right-clicking the panel or the bar opens the same menu the tray icon has:
+switch between the panel and the bar, keep the list open, stop the popups for
+thirty minutes, reset the position, quit. It is there because the tray icon is
+hidden in the Windows 11 overflow by default, so the bar is what you can
+actually reach. Text selection still copies with `Ctrl+C`.
 
 ### Ordering
 
@@ -167,11 +173,18 @@ that decides what is safe. Read the command.
 | Sound | A different cue per row type | on |
 | Flash | Amber on arrival, green when the last row clears | on |
 | Hide when empty | Collapse the panel at zero rows | off |
+| Keep the list open | Never collapse on its own | off |
 | Background opacity | 40–100%. Text and borders stay opaque | 100% |
 
 "Hide when empty" is off by default because a window that disappears and
 reappears on its own reads as flicker. The flash acknowledges the clear
 instead.
+
+"Keep the list open" is also on the right-click menu, since deciding you want
+the panel to stay is something you do while looking at the bar. While it is on,
+pointing at the bar no longer opens it — the peek's other half is switched off,
+so a collapse you asked for would otherwise end the moment the pointer went
+near. Click the bar to open it.
 
 ### Language
 
@@ -231,6 +244,13 @@ Every hook URL carries a secret generated on first run and kept in
 The last row is the honest limit. A forged request cannot make Claude Code run
 anything: answering it only answers that request. What it could do is put a
 convincing row in the panel, which is why the token exists at all.
+
+Each copy of the app writes its own token, so hooks installed by one and read
+by another — an installed build and a portable one, say — are refused, and
+nothing reaches the inbox. That used to look exactly like a quiet afternoon.
+The setup screen now names it and offers to point the hooks at the copy that
+is running; an empty inbox says so too. Only an address shaped like a token
+counts, so a port scan cannot raise the warning.
 
 The third row depends on your profile's permissions, which are not always what
 Windows set up. Checking the file on the machine this was written on found a
