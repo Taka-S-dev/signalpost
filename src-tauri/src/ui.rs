@@ -56,6 +56,7 @@ pub fn show_pill(app: &AppHandle) {
         dock(&window);
     }
     let _ = window.show();
+    crate::refresh_tray_menu(app);
 }
 
 /// Collapses the panel once the pointer really has left it.
@@ -179,6 +180,7 @@ pub fn expand(app: &AppHandle) {
     resize(&window, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     place(app, &window);
     let _ = window.show();
+    crate::refresh_tray_menu(app);
 }
 
 /// Tray text, supplied by the frontend so every translation lives in one
@@ -276,6 +278,7 @@ pub fn sync(app: &AppHandle, items: &[Item], arrived: Option<ItemKind>) {
         // through the settings.
         if settings.auto_hide && !settings.keep_open {
             let _ = window.hide();
+            crate::refresh_tray_menu(app);
         }
     } else if worth_interrupting && !snoozed {
         expand(app);
@@ -520,6 +523,7 @@ pub fn toggle(app: &AppHandle) {
     let Some(window) = panel(app) else { return };
     if window.is_visible().unwrap_or(false) && window.is_focused().unwrap_or(false) {
         let _ = window.hide();
+        crate::refresh_tray_menu(app);
     } else {
         reveal(app);
     }

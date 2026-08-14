@@ -613,8 +613,14 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
-            "show" => ui::reveal(app),
-            "bar" => ui::show_pill(app),
+            "mode" => {
+                if in_panel_mode(app) {
+                    ui::show_pill(app)
+                } else {
+                    ui::reveal(app)
+                }
+                refresh_tray_menu(app);
+            }
             "snooze" => toggle_snooze(app),
             "reset" => {
                 if let Some(state) = app.try_state::<Arc<AppState>>() {
@@ -650,12 +656,53 @@ fn tray_menu(app: &tauri::AppHandle, strings: &ui::TrayStrings) -> tauri::Result
         &strings.snooze
     };
 
-    let show = MenuItem::with_id(app, "show", &strings.show, true, None::<&str>)?;
-    let bar = MenuItem::with_id(app, "bar", &strings.bar, true, None::<&str>)?;
+    // One item, not two. Listing both directions meant one of them was always
+    // a no-op — "collapse to bar" while already a bar — and neither label said
+    // which state you were in. This reads as the thing it will do next, the
+    // same way the snooze item below it does.
+    let mode_label = if in_panel_mode(app) {
+        &strings.bar
+    } else {
+        &strings.show
+    };
+
+    let mode = MenuItem::with_id(app, "mode", mode_label, true, None::<&str>)?;
     let snooze = MenuItem::with_id(app, "snooze", snooze_label, true, None::<&str>)?;
     let reset = MenuItem::with_id(app, "reset", &strings.reset, true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", &strings.quit, true, None::<&str>)?;
-    Menu::with_items(app, &[&show, &bar, &snooze, &reset, &quit])
+    Menu::with_items(app, &[&mode, &snooze, &reset, &quit])
+}
+
+/// True only when the panel is on screen at full size. A hidden window is not
+/// something to collapse, so from the tray it offers to open instead.
+fn in_panel_mode(app: &tauri::AppHandle) -> bool {
+    let visible = ui::panel(app)
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    let pill = app
+        .try_state::<Arc<AppState>>()
+        .map(|s| s.is_pill())
+        .unwrap_or(false);
+    showing_panel(visible, pill)
+}
+
+/// There are three states, not two — hidden, bar, panel — so the tray item
+/// cannot simply invert. Split out from the window it reads so the third state
+/// is pinned by a test rather than by whichever one was in front of me.
+fn showing_panel(visible: bool, pill: bool) -> bool {
+    visible && !pill
+}
+
+/// Rebuilds the menu so its single mode item matches the state it describes.
+pub(crate) fn refresh_tray_menu(app: &tauri::AppHandle) {
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        if let Ok(menu) = tray_menu(app, &state.tray_strings()) {
+            let _ = tray.set_menu(Some(menu));
+        }
+    }
 }
 
 /// Flips the suppression and rebuilds the menu so its label matches.
@@ -668,11 +715,7 @@ fn toggle_snooze(app: &tauri::AppHandle) {
     } else {
         state.snooze(SNOOZE_MINUTES);
     }
-    if let Some(tray) = app.tray_by_id(TRAY_ID) {
-        if let Ok(menu) = tray_menu(app, &state.tray_strings()) {
-            let _ = tray.set_menu(Some(menu));
-        }
-    }
+    refresh_tray_menu(app);
 }
 
 /// Registers the global shortcut, and carries on without it if the key is
@@ -820,5 +863,19 @@ mod tests {
             std::env::temp_dir().join(PRODUCT_DIR)
         );
         std::fs::remove_dir_all(&exe).ok();
+    }
+
+    #[test]
+    fn the_tray_offers_to_collapse_only_the_full_panel() {
+        assert!(showing_panel(true, false));
+        assert!(!showing_panel(true, true), "a bar is already collapsed");
+    }
+
+    /// The state that a two-way toggle gets wrong: nothing on screen. Offering
+    /// "collapse to bar" there does nothing anyone can see.
+    #[test]
+    fn a_hidden_window_is_offered_open_rather_than_collapse() {
+        assert!(!showing_panel(false, false));
+        assert!(!showing_panel(false, true));
     }
 }
