@@ -19,9 +19,19 @@
 //! answers.
 
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
 
 static TOKEN: OnceLock<String> = OnceLock::new();
+
+/// Hooks addressed to a token that is not ours.
+///
+/// The token is written per state directory, so an installed copy, a portable
+/// copy and a development build each hold a different one. Point the hooks at
+/// one and run another, and every event is refused: no row, no sound, no
+/// error. It reads exactly like the sessions having gone quiet.
+static MISROUTED: AtomicU64 = AtomicU64::new(0);
+static MISROUTED_AT: AtomicU64 = AtomicU64::new(0);
 
 /// A v4 UUID with the hyphens removed: 32 hex characters from the system
 /// generator, which is plenty for a value only ever compared, never guessed
@@ -81,6 +91,44 @@ pub fn matches(candidate: &str) -> bool {
         == 0
 }
 
+/// Records a refused hook, but only when what arrived was shaped like a token.
+///
+/// Anything sweeping the port supplies rubbish, and a warning that fires for
+/// that is a warning nobody can act on. Something the right shape is another
+/// copy of this app, which is the case worth naming.
+pub fn note_mismatch(candidate: &str) {
+    if !plausible(candidate) {
+        return;
+    }
+    MISROUTED.fetch_add(1, Ordering::Relaxed);
+    MISROUTED_AT.store(now_ms(), Ordering::Relaxed);
+}
+
+/// How many hooks were refused, and how long ago the last one was, or `None`
+/// while nothing has been misaddressed.
+pub fn misrouted() -> Option<(u64, u64)> {
+    let count = MISROUTED.load(Ordering::Relaxed);
+    if count == 0 {
+        return None;
+    }
+    let at = MISROUTED_AT.load(Ordering::Relaxed);
+    Some((count, now_ms().saturating_sub(at)))
+}
+
+/// Cleared once the hooks have been rewritten, so the warning goes away by
+/// itself rather than needing the app restarted to stop nagging.
+pub fn forget_mismatches() {
+    MISROUTED.store(0, Ordering::Relaxed);
+    MISROUTED_AT.store(0, Ordering::Relaxed);
+}
+
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,6 +147,35 @@ mod tests {
         near.pop();
         near.push(if current().ends_with('a') { 'b' } else { 'a' });
         assert!(!matches(&near));
+    }
+
+    /// Runs alone: the counters are process-wide, so a second test touching
+    /// them at the same moment would read the other one's writes.
+    #[test]
+    fn only_something_shaped_like_a_token_is_worth_warning_about() {
+        forget_mismatches();
+        assert!(misrouted().is_none());
+
+        // A port sweep, a truncated URL, a browser guessing. None of these is
+        // another copy of the app, and a warning about them cannot be acted on.
+        for rubbish in ["", "x", "favicon.ico", "short", "../etc"] {
+            note_mismatch(rubbish);
+        }
+        assert!(
+            misrouted().is_none(),
+            "rubbish must not raise a setup warning"
+        );
+
+        // The shape of a real token, but not ours: another copy of Signalpost.
+        note_mismatch(&generate());
+        note_mismatch(&generate());
+        let (count, since) = misrouted().expect("a token-shaped miss is reported");
+        assert_eq!(count, 2);
+        assert!(since < 60_000);
+
+        // Rewriting the hooks is the fix, so it has to clear the warning.
+        forget_mismatches();
+        assert!(misrouted().is_none());
     }
 
     #[test]

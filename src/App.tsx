@@ -48,6 +48,10 @@ const KEYS: [string, keyof Dictionary["hints"]][] = [
   ["Esc", "escape"],
 ];
 
+/// How often the hook setup is re-read. Nothing else prompts a re-check when
+/// the failure is that no events arrive.
+const STATUS_POLL_MS = 15_000;
+
 // Hooks are loaded when a session starts, so a hook arriving *after* the
 // config was written is the only proof they are in effect.
 function isLive(status: HookStatus): boolean {
@@ -61,6 +65,7 @@ export default function App() {
   const [view, setView] = useState<View>("inbox");
   const [installed, setInstalled] = useState(true);
   const [live, setLive] = useState(true);
+  const [misrouted, setMisrouted] = useState(0);
   const [autoSetup, setAutoSetup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
@@ -78,15 +83,23 @@ export default function App() {
     // The window is resized by Rust, so the layout follows rather than leads.
     const modeEvent = listen<"full" | "pill">("mode:changed", (e) => setMode(e.payload));
     void api.serverPort().then(setPort);
-    void api.hooksStatus().then((status) => {
-      setInstalled(status.installed);
-      setLive(isLive(status));
-      if (!status.installed) {
-        setView("setup");
-        setAutoSetup(true);
-      }
-    });
+    // Polled, not read once: a hook pointed at another copy of the app is
+    // refused at some later moment, and the whole failure is that nothing
+    // arrives to prompt a re-check.
+    const readStatus = () =>
+      void api.hooksStatus().then((status) => {
+        setInstalled(status.installed);
+        setLive(isLive(status));
+        setMisrouted(status.misrouted ?? 0);
+        if (!status.installed) {
+          setView("setup");
+          setAutoSetup(true);
+        }
+      });
+    readStatus();
+    const poll = setInterval(readStatus, STATUS_POLL_MS);
     return () => {
+      clearInterval(poll);
       void snooze.then((un) => un());
       void modeEvent.then((un) => un());
     };
@@ -421,10 +434,16 @@ export default function App() {
         <Setup
           installed={installed}
           live={live}
+          misrouted={misrouted}
           port={port}
           settings={settings}
           onSettings={update}
-          onChanged={setInstalled}
+          onChanged={(value) => {
+            setInstalled(value);
+            // Rewriting the hooks is what clears this in Rust; mirroring it
+            // here keeps the warning from lingering until the next poll.
+            setMisrouted(0);
+          }}
           onDone={() => setView("inbox")}
         />
       )}
@@ -445,6 +464,14 @@ export default function App() {
             {autoAllowed > 0 && (
               <button className="empty-rules" onClick={() => setView("rules")}>
                 {t.empty.autoAllowed(autoAllowed)}
+              </button>
+            )}
+            {/* The one cause of an empty inbox that is not good news. It has
+                to be said here, because a screen nobody opens is where this
+                would otherwise be explained. */}
+            {misrouted > 0 && (
+              <button className="empty-warn" onClick={() => setView("setup")}>
+                {t.empty.misrouted(misrouted)}
               </button>
             )}
           </div>

@@ -9,6 +9,8 @@ interface Props {
   installed: boolean;
   // True once a hook has actually arrived since the config was written.
   live: boolean;
+  // How many hooks were turned away for naming another copy of the app.
+  misrouted: number;
   port: number;
   settings: Settings;
   onSettings: (settings: Settings) => void;
@@ -39,7 +41,16 @@ function Toggle({ label, hint, checked, onChange }: ToggleProps) {
  * Shown until the hooks are wired up. Without them nothing ever reaches the
  * inbox, so this is the one screen that has to explain itself.
  */
-export function Setup({ installed, live, port, settings, onSettings, onChanged, onDone }: Props) {
+export function Setup({
+  installed,
+  live,
+  misrouted,
+  port,
+  settings,
+  onSettings,
+  onChanged,
+  onDone,
+}: Props) {
   const t = useT();
   const [message, setMessage] = useState<string | null>(null);
   const [codex, setCodex] = useState(false);
@@ -97,16 +108,29 @@ export function Setup({ installed, live, port, settings, onSettings, onChanged, 
           "written to the file" and "actually in effect" are different facts,
           and showing only the first made a working setup and a stale one look
           identical. */}
-      <p className={`status ${!installed ? "warn" : live ? "ok" : "warn"}`}>
+      <p className={`status ${!installed ? "warn" : misrouted > 0 ? "warn" : live ? "ok" : "warn"}`}>
         {!installed
           ? t.setup.notInstalled
-          : live
-            ? t.setup.live
-            : t.setup.needsRestart}
+          : misrouted > 0
+            ? t.setup.misrouted(misrouted)
+            : live
+              ? t.setup.live
+              : t.setup.needsRestart}
       </p>
-      {installed && !live && <p className="note">{t.setup.needsRestartHint}</p>}
+      {/* More specific than "nothing has arrived yet", so it replaces that
+          rather than adding to it: the events are arriving, at a copy of the
+          app that is not this one. */}
+      {installed && misrouted > 0 && <p className="note">{t.setup.misroutedHint}</p>}
+      {installed && misrouted === 0 && !live && <p className="note">{t.setup.needsRestartHint}</p>}
       <p className="note">{t.setup.explain(port)}</p>
       <div className="actions">
+        {/* Rewriting is the fix when the hooks name another copy, so the
+            button has to be reachable while already installed. */}
+        {installed && misrouted > 0 && (
+          <button className="primary" onClick={install}>
+            {t.setup.repoint}
+          </button>
+        )}
         {installed ? (
           <button onClick={uninstall}>{t.setup.uninstall}</button>
         ) : (

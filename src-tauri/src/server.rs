@@ -84,6 +84,10 @@ async fn guard(request: Request, next: Next) -> Response {
     if crate::token::matches(supplied) {
         next.run(request).await
     } else {
+        // Still 404, but no longer silent to us: hooks pointed at another copy
+        // of the app land here and are the likeliest reason for a panel that
+        // has stopped showing anything.
+        crate::token::note_mismatch(supplied);
         StatusCode::NOT_FOUND.into_response()
     }
 }

@@ -57,6 +57,7 @@ export const ja: Dictionary = {
     title: "すべて処理済みです。",
     hint: "承認待ちが出たらここに並びます。",
     autoAllowed: (n: number) => `ルールにより ${n} 件を確認なしで許可済み →`,
+    misrouted: (n: number) => `${n} 件が別の Signalpost に届いています →`,
   },
   hints: {
     show: "パネルを表示",
@@ -82,6 +83,10 @@ export const ja: Dictionary = {
     live: "hooks は動作中です（受信を確認）",
     needsRestart: "設定済みですが、まだ届いていません",
     needsRestartHint: "起動してから hooks のイベントを一度も受け取っていない状態です。何か動かせば最初のイベントで緑になります。設定した直後なら、すでに動いているセッションには反映されていないので Claude Code の再起動が要ります。",
+    misrouted: (n: number) => `${n} 件が別の Signalpost に届いています`,
+    misroutedHint:
+      "hooks が、いま動いているものとは別のコピーを指しています。インストール版・ポータブル版・開発版はそれぞれ別の鍵を持つため、別のコピー宛てのイベントは受け付けられず、受信箱には何も入りません。張り替えると hooks がこのコピーを指すようになります。すでに動いているセッションは、再起動するまで古い宛先のままです。",
+    repoint: "hooks をこのコピーに張り替える",
     notInstalled: "hooks が未設定です",
     explain: (port: number) =>
       `~/.claude/settings.json に PermissionRequest / Notification / SessionEnd の HTTP hook を追加します。送信先は 127.0.0.1:${port} のみで、既存の設定は残したまま .bak を作ってから書き換えます。`,

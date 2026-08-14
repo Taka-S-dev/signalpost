@@ -1065,6 +1065,23 @@ kbd {
   color: var(--text);
 }
 
+/* Deliberately not a footnote. Every other line under an empty inbox is good
+   news, and this one says the events are being thrown away, so it has to be
+   the thing the eye lands on rather than something read only if looked for. */
+.empty-warn {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: none;
+  font-size: var(--text-sm);
+  color: var(--warn);
+}
+
+.empty-warn:hover {
+  background: var(--bg-sunken);
+}
+
 /* Settings controls -------------------------------------------------------- */
 
 .toggle,

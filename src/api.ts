@@ -80,6 +80,12 @@ export interface HookStatus {
   installed: boolean;
   installedAt: number | null;
   lastHookAt: number | null;
+  // Hooks refused for carrying another copy's token. The token is written per
+  // state directory, so an installed copy, a portable copy and a development
+  // build each hold a different one, and pointing the hooks at the wrong one
+  // is silent: no row, no sound, no error.
+  misrouted: number | null;
+  misroutedAt: number | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

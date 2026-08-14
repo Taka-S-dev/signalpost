@@ -232,6 +232,10 @@ struct HookStatus {
     installed_at: Option<u64>,
     /// Milliseconds of the last hook we received, or null if none yet.
     last_hook_at: Option<u64>,
+    /// How many hooks were refused for carrying another copy's token, and how
+    /// long ago the last one was. Null while nothing has been misaddressed.
+    misrouted: Option<u64>,
+    misrouted_at: Option<u64>,
 }
 
 #[tauri::command]
@@ -241,6 +245,8 @@ fn hooks_status(state: Shared) -> HookStatus {
             installed: false,
             installed_at: None,
             last_hook_at: None,
+            misrouted: None,
+            misrouted_at: None,
         };
     };
     // The settings file's own timestamp survives restarts, so this does not
@@ -251,17 +257,28 @@ fn hooks_status(state: Shared) -> HookStatus {
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_millis() as u64);
 
+    let (misrouted, misrouted_at) = match token::misrouted() {
+        Some((count, since)) => (Some(count), Some(since)),
+        None => (None, None),
+    };
+
     HookStatus {
         installed: install::is_installed(&home),
         installed_at,
         last_hook_at: state.last_hook_at(),
+        misrouted,
+        misrouted_at,
     }
 }
 
 #[tauri::command]
 fn install_hooks(state: Shared) -> Result<String, String> {
     let home = state.app().path().home_dir().map_err(|e| e.to_string())?;
-    install::install(&home).map(|p| p.display().to_string())
+    let written = install::install(&home).map(|p| p.display().to_string())?;
+    // The hooks now carry this copy's token, so whatever was refused before
+    // says nothing about the setup from here on.
+    token::forget_mismatches();
+    Ok(written)
 }
 
 #[tauri::command]

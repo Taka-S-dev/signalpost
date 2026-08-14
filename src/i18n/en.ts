@@ -62,6 +62,10 @@ export const en = {
     title: "All clear.",
     hint: "Approvals will queue up here.",
     autoAllowed: (n: number) => `${n} approved by rules, without asking →`,
+    misrouted: (n: number) =>
+      n === 1
+        ? "1 event went to a different copy of Signalpost →"
+        : `${n} events went to a different copy of Signalpost →`,
   },
   hints: {
     show: "show the panel",
@@ -87,6 +91,13 @@ export const en = {
     live: "Hooks are installed and arriving",
     needsRestart: "Installed, but nothing has arrived yet",
     needsRestartHint: "No hook has arrived since this app started; the first event turns it green. If you just installed them, sessions already running were started without them and need a restart.",
+    misrouted: (n: number) =>
+      n === 1
+        ? "1 event went to a different copy of Signalpost"
+        : `${n} events went to a different copy of Signalpost`,
+    misroutedHint:
+      "The hooks name a copy of this app that is not the one running. Each copy — installed, portable, development — keeps its own key, so events addressed to another one are turned away and nothing reaches the inbox. Repointing rewrites the hooks to this copy. Sessions already running keep the old address until they restart.",
+    repoint: "Point the hooks at this copy",
     notInstalled: "Hooks are not installed yet",
     explain: (port: number) =>
       `Adds PermissionRequest / Notification / SessionEnd HTTP hooks to ~/.claude/settings.json. They post to 127.0.0.1:${port} only, existing settings are kept, and a .bak is written first.`,
