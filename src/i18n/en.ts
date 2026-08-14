@@ -70,7 +70,7 @@ export const en = {
   hints: {
     show: "show the panel",
     move: "move between rows",
-    bar: "collapse to the bar",
+    bar: "collapse to the bar, and open it again",
     trayOnly: "tray",
     allow: "allow",
     deny: "deny",

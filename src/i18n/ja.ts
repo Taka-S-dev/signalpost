@@ -62,7 +62,7 @@ export const ja: Dictionary = {
   hints: {
     show: "パネルを表示",
     move: "行を移動",
-    bar: "バーに畳む",
+    bar: "バーに畳む / バーから開く",
     trayOnly: "トレイ",
     allow: "許可",
     deny: "拒否",

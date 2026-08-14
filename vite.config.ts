@@ -13,6 +13,11 @@ export default defineConfig(async () => ({
     // is a pure function and would run without one.
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Testing Library unmounts between cases only when it can register an
+    // afterEach itself, which it can do only with the globals in scope.
+    // Without this a case sees the previous one's markup, and a component
+    // still listening on `window` answers keys meant for the next one.
+    globals: true,
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

@@ -1,4 +1,4 @@
-import { render, within } from "@testing-library/react";
+import { act, render, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "../api";
 import { dictionary, I18nContext } from "../i18n";
@@ -15,7 +15,9 @@ vi.mock("../api", async (original) => ({
 
 const t = dictionary("en");
 
-function show(over: { installed?: boolean; live?: boolean; misrouted?: number } = {}) {
+// The screen asks Rust three questions as it mounts. Awaiting them keeps the
+// answers from landing after the assertions, outside React's knowledge.
+async function show(over: { installed?: boolean; live?: boolean; misrouted?: number } = {}) {
   const { container } = render(
     <I18nContext.Provider value={t}>
       <Setup
@@ -30,6 +32,7 @@ function show(over: { installed?: boolean; live?: boolean; misrouted?: number } 
       />
     </I18nContext.Provider>,
   );
+  await act(async () => {});
   return within(container);
 }
 
@@ -37,8 +40,8 @@ describe("Setup", () => {
   // Each copy of the app keeps its own token, so hooks written by one and read
   // by another are refused with nothing shown anywhere. This is the screen
   // that has to name it.
-  it("names the copy problem rather than blaming a stale session", () => {
-    const q = show({ misrouted: 4 });
+  it("names the copy problem rather than blaming a stale session", async () => {
+    const q = await show({ misrouted: 4 });
     expect(q.getByText(t.setup.misrouted(4))).toBeTruthy();
     expect(q.getByText(t.setup.misroutedHint)).toBeTruthy();
     // "No hook has arrived yet" is true but useless here: they are arriving,
@@ -48,13 +51,13 @@ describe("Setup", () => {
 
   // Rewriting the hooks is the fix, and it was previously unreachable while
   // installed — the only button on offer was "remove".
-  it("offers to repoint the hooks while they are still installed", () => {
-    const q = show({ misrouted: 1 });
+  it("offers to repoint the hooks while they are still installed", async () => {
+    const q = await show({ misrouted: 1 });
     expect(q.getByRole("button", { name: t.setup.repoint })).toBeTruthy();
   });
 
-  it("says nothing about copies when nothing has been misaddressed", () => {
-    const q = show({ misrouted: 0 });
+  it("says nothing about copies when nothing has been misaddressed", async () => {
+    const q = await show({ misrouted: 0 });
     expect(q.queryByText(t.setup.misroutedHint)).toBeNull();
     expect(q.queryByRole("button", { name: t.setup.repoint })).toBeNull();
     expect(q.getByText(t.setup.needsRestartHint)).toBeTruthy();

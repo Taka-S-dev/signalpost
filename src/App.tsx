@@ -207,7 +207,11 @@ export default function App() {
         return;
       }
       if (event.key === "c") {
-        void api.collapsePanel();
+        // Both directions. The key was only ever the collapsing half, so in
+        // the bar it did nothing at all — the one place someone pressing it
+        // is most likely to want the other half.
+        if (mode === "pill") void api.expandPanel();
+        else void api.collapsePanel();
         return;
       }
       if (view !== "inbox" || !selected) return;
@@ -246,7 +250,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view, selected, keys, move, resolve, dismiss, openEditor]);
+  }, [view, selected, keys, mode, move, resolve, dismiss, openEditor]);
 
   const t = useMemo(() => dictionary(settings.lang), [settings.lang]);
 
