@@ -309,6 +309,15 @@ Windows 限定なのは、動かないプラットフォームでの合格に意
 
 `GET /queue` で受信箱の中身と各行の待ち時間が読める。行がちゃんと消えたかの確認用。
 
+状態は `auto-allow.json`・`projects.json`・`risk.json`・`settings.json`・
+`window.json` と hook のトークン。**どこに置くかは exe の隣にあるもので決まる** ——
+`portable.txt` があれば隣の `data` フォルダ、無ければ `%APPDATA%\Signalpost`。
+
+つまり `target/release/signalpost.exe` は 3 つ目のコピーになる。配布するポータブル版と
+バイト列は同じだが、隣にマーカーが無いので**別のトークンと別の設定を持つ**。あるコピーで
+設定した hooks は別のコピーでは受け付けられず、その状態はセットアップ画面に出る。
+**hooks を設定したコピーを起動すること。**
+
 - フロントエンド: React 19 + TypeScript + Vite
 - バックエンド: Rust / Tauri 2 / axum
 

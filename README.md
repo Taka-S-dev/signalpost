@@ -338,8 +338,15 @@ app cannot run on would say nothing.
 - Frontend: React 19 + TypeScript + Vite
 - Backend: Rust / Tauri 2 / axum
 
-Config lives in `%APPDATA%/Signalpost`: `auto-allow.json`, `projects.json`,
-`risk.json`, `settings.json`, `window.json`.
+State is `auto-allow.json`, `projects.json`, `risk.json`, `settings.json`,
+`window.json` and the hook token. Where it goes depends on what sits beside
+the executable: with `portable.txt` there it is a `data` folder next to it,
+and without one it is `%APPDATA%/Signalpost`.
+
+That makes `target/release/signalpost.exe` a third copy — same bytes as the
+portable download, no marker beside it, so its own token and its own settings.
+Hooks installed from one copy are refused by another, which the setup screen
+reports. Run the copy you installed the hooks from.
 
 `GET /queue` reports what the inbox is holding and how long each row has
 waited — useful for checking whether a row was retired when it should have
