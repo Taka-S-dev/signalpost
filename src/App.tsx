@@ -66,6 +66,7 @@ export default function App() {
   const [installed, setInstalled] = useState(true);
   const [live, setLive] = useState(true);
   const [misrouted, setMisrouted] = useState(0);
+  const [elsewhere, setElsewhere] = useState(false);
   const [autoSetup, setAutoSetup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
@@ -94,6 +95,7 @@ export default function App() {
         setInstalled(status.installed);
         setLive(isLive(status));
         setMisrouted(status.misrouted ?? 0);
+        setElsewhere(status.pointsElsewhere);
         if (!status.installed) {
           setView("setup");
           setAutoSetup(true);
@@ -472,6 +474,7 @@ export default function App() {
           installed={installed}
           live={live}
           misrouted={misrouted}
+          elsewhere={elsewhere}
           port={port}
           settings={settings}
           onSettings={update}
@@ -480,6 +483,7 @@ export default function App() {
             // Rewriting the hooks is what clears this in Rust; mirroring it
             // here keeps the warning from lingering until the next poll.
             setMisrouted(0);
+            setElsewhere(false);
           }}
           onDone={() => setView("inbox")}
         />
@@ -506,9 +510,9 @@ export default function App() {
             {/* The one cause of an empty inbox that is not good news. It has
                 to be said here, because a screen nobody opens is where this
                 would otherwise be explained. */}
-            {misrouted > 0 && (
+            {(misrouted > 0 || elsewhere) && (
               <button className="empty-warn" onClick={() => setView("setup")}>
-                {t.empty.misrouted(misrouted)}
+                {misrouted > 0 ? t.empty.misrouted(misrouted) : t.empty.elsewhere}
               </button>
             )}
           </div>

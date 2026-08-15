@@ -11,6 +11,9 @@ interface Props {
   live: boolean;
   // How many hooks were turned away for naming another copy of the app.
   misrouted: number;
+  // Wired up, but naming a different copy. Known without waiting for one of
+  // those refusals, which need the other copy to be running.
+  elsewhere: boolean;
   port: number;
   settings: Settings;
   onSettings: (settings: Settings) => void;
@@ -45,6 +48,7 @@ export function Setup({
   installed,
   live,
   misrouted,
+  elsewhere,
   port,
   settings,
   onSettings,
@@ -108,25 +112,33 @@ export function Setup({
           "written to the file" and "actually in effect" are different facts,
           and showing only the first made a working setup and a stale one look
           identical. */}
-      <p className={`status ${!installed ? "warn" : misrouted > 0 ? "warn" : live ? "ok" : "warn"}`}>
-        {!installed
-          ? t.setup.notInstalled
-          : misrouted > 0
-            ? t.setup.misrouted(misrouted)
-            : live
-              ? t.setup.live
-              : t.setup.needsRestart}
+      <p className={`status ${installed && misrouted === 0 && live ? "ok" : "warn"}`}>
+        {/* "Not set up" and "set up, but for a different copy" invite
+            opposite actions, and the second used to be reported as the
+            first — which pointed at the button that overwrites the other
+            copy's hooks. */}
+        {elsewhere
+          ? t.setup.elsewhere
+          : !installed
+            ? t.setup.notInstalled
+            : misrouted > 0
+              ? t.setup.misrouted(misrouted)
+              : live
+                ? t.setup.live
+                : t.setup.needsRestart}
       </p>
       {/* More specific than "nothing has arrived yet", so it replaces that
           rather than adding to it: the events are arriving, at a copy of the
           app that is not this one. */}
-      {installed && misrouted > 0 && <p className="note">{t.setup.misroutedHint}</p>}
-      {installed && misrouted === 0 && !live && <p className="note">{t.setup.needsRestartHint}</p>}
+      {(misrouted > 0 || elsewhere) && <p className="note">{t.setup.misroutedHint}</p>}
+      {installed && misrouted === 0 && !elsewhere && !live && (
+        <p className="note">{t.setup.needsRestartHint}</p>
+      )}
       <p className="note">{t.setup.explain(port)}</p>
       <div className="actions">
         {/* Rewriting is the fix when the hooks name another copy, so the
             button has to be reachable while already installed. */}
-        {installed && misrouted > 0 && (
+        {(misrouted > 0 || elsewhere) && (
           <button className="primary" onClick={install}>
             {t.setup.repoint}
           </button>

@@ -87,6 +87,9 @@ export interface HookStatus {
   // is silent: no row, no sound, no error.
   misrouted: number | null;
   misroutedAt: number | null;
+  // Wired up, but naming a different copy. Known from the file at startup,
+  // unlike misrouted, which needs the other copy to actually be running.
+  pointsElsewhere: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

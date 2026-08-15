@@ -87,6 +87,34 @@ fn is_current(entry: &Value) -> bool {
         .any(|u| u.contains("127.0.0.1") && u.contains(&prefix))
 }
 
+/// True when hooks are wired up, but to a different copy of the app.
+///
+/// Each copy writes its own token beside its own settings, so an installed
+/// build and a portable one never accept each other's URLs. Reporting that as
+/// "not set up" invites the fix that overwrites the other copy's hooks, and
+/// it is answerable from the file alone — waiting for a refused request means
+/// waiting for the other copy to be running too.
+pub fn points_elsewhere(home: &Path) -> bool {
+    let Ok(raw) = std::fs::read_to_string(settings_path(home)) else {
+        return false;
+    };
+    let Ok(settings) = serde_json::from_str::<Value>(&raw) else {
+        return false;
+    };
+    let entries: Vec<&Value> = wiring()
+        .iter()
+        .filter_map(|(event, _, _)| {
+            settings
+                .get("hooks")
+                .and_then(|h| h.get(event))
+                .and_then(Value::as_array)
+        })
+        .flatten()
+        .collect();
+
+    entries.iter().any(|e| is_ours(e)) && !entries.iter().any(|e| is_current(e))
+}
+
 pub fn is_installed(home: &Path) -> bool {
     let Ok(raw) = std::fs::read_to_string(settings_path(home)) else {
         return false;
@@ -195,6 +223,36 @@ mod tests {
         assert!(stop.iter().any(|e| e["hooks"][0]["command"] == "echo hi"));
         assert!(stop.iter().any(is_ours));
         assert!(is_installed(&dir));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The state that used to read as "not set up at all", which invites the
+    /// button that overwrites the other copy's hooks.
+    #[test]
+    fn hooks_written_by_another_copy_are_told_apart_from_no_hooks() {
+        let dir = std::env::temp_dir().join(format!("cn-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join(".claude")).unwrap();
+
+        // Nothing at all.
+        std::fs::write(settings_path(&dir), r#"{"hooks":{}}"#).unwrap();
+        assert!(!is_installed(&dir));
+        assert!(!points_elsewhere(&dir));
+
+        // Our shape, someone else's token.
+        std::fs::write(
+            settings_path(&dir),
+            r#"{"hooks":{"Stop":[{"hooks":[{"type":"command",
+               "url":"http://127.0.0.1:8787/hook/ffffffffffffffffffffffffffffffff/turn-end"}]}]}}"#,
+        )
+        .unwrap();
+        assert!(!is_installed(&dir));
+        assert!(points_elsewhere(&dir));
+
+        // Ours, current.
+        install(&dir).unwrap();
+        assert!(is_installed(&dir));
+        assert!(!points_elsewhere(&dir));
 
         std::fs::remove_dir_all(&dir).ok();
     }

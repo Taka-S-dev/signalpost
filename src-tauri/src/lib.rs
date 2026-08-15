@@ -325,6 +325,10 @@ struct HookStatus {
     /// long ago the last one was. Null while nothing has been misaddressed.
     misrouted: Option<u64>,
     misrouted_at: Option<u64>,
+    /// Wired up, but to a different copy. Read from the file, so it is known
+    /// at startup rather than only once the other copy is running and its
+    /// requests start being refused.
+    points_elsewhere: bool,
 }
 
 #[tauri::command]
@@ -336,6 +340,7 @@ fn hooks_status(state: Shared) -> HookStatus {
             last_hook_at: None,
             misrouted: None,
             misrouted_at: None,
+            points_elsewhere: false,
         };
     };
     // The settings file's own timestamp survives restarts, so this does not
@@ -357,6 +362,7 @@ fn hooks_status(state: Shared) -> HookStatus {
         last_hook_at: state.last_hook_at(),
         misrouted,
         misrouted_at,
+        points_elsewhere: install::points_elsewhere(&home),
     }
 }
 

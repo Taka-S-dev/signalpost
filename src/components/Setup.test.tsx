@@ -17,13 +17,21 @@ const t = dictionary("en");
 
 // The screen asks Rust three questions as it mounts. Awaiting them keeps the
 // answers from landing after the assertions, outside React's knowledge.
-async function show(over: { installed?: boolean; live?: boolean; misrouted?: number } = {}) {
+async function show(
+  over: {
+    installed?: boolean;
+    live?: boolean;
+    misrouted?: number;
+    elsewhere?: boolean;
+  } = {},
+) {
   const { container } = render(
     <I18nContext.Provider value={t}>
       <Setup
         installed={over.installed ?? true}
         live={over.live ?? false}
         misrouted={over.misrouted ?? 0}
+        elsewhere={over.elsewhere ?? false}
         port={8787}
         settings={DEFAULT_SETTINGS}
         onSettings={() => {}}
@@ -53,6 +61,17 @@ describe("Setup", () => {
   // installed — the only button on offer was "remove".
   it("offers to repoint the hooks while they are still installed", async () => {
     const q = await show({ misrouted: 1 });
+    expect(q.getByRole("button", { name: t.setup.repoint })).toBeTruthy();
+  });
+
+  // Known from the settings file alone. The refusal counter needs the other
+  // copy to be running and posting; the file says so at startup, which is
+  // when this screen is looked at.
+  it("names the copy problem before a single request has been refused", async () => {
+    const q = await show({ installed: false, misrouted: 0, elsewhere: true });
+    expect(q.getByText(t.setup.elsewhere)).toBeTruthy();
+    // "Not installed" points at the button that overwrites the other copy.
+    expect(q.queryByText(t.setup.notInstalled)).toBeNull();
     expect(q.getByRole("button", { name: t.setup.repoint })).toBeTruthy();
   });
 
