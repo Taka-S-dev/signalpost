@@ -139,9 +139,7 @@ fn go_to(state: &Arc<AppState>, cwd: &str, project: &str) -> Result<(), String> 
         Jump::Run => ui::run_open_command(&state.open_command(cwd))?,
         Jump::Refuse => return Err(NO_WINDOW.into()),
     }
-    if let Some(window) = ui::panel(state.app()) {
-        let _ = window.hide();
-    }
+    step_aside(state);
     Ok(())
 }
 
@@ -174,19 +172,70 @@ fn jump(explicit: bool, found: Option<isize>) -> Jump {
 /// A code rather than a sentence: the UI writes the message, in its language.
 const NO_WINDOW: &str = "no-window";
 
-/// Gets the panel out of the way.
+/// Gets the panel out of the way, on request.
 ///
-/// While anything is still queued it collapses rather than disappears, so
-/// there is always something on screen to notice — hiding it completely is
-/// what made rows easy to miss.
+/// Asking for it gone is allowed to take it off the screen; nothing else is.
 #[tauri::command]
 fn hide_panel(state: Shared) {
-    if state.items().is_empty() {
-        if let Some(window) = ui::panel(state.app()) {
-            let _ = window.hide();
+    match on_escape(state.items().len()) {
+        Aside::Gone => {
+            if let Some(window) = ui::panel(state.app()) {
+                let _ = window.hide();
+            }
         }
-    } else {
+        // Escape is a request, so it is honoured even while the list is
+        // meant to stay open: that setting stops the app collapsing on its
+        // own, not the user asking for the screen back.
+        Aside::Bar | Aside::Stay => ui::show_pill(state.app()),
+    }
+}
+
+/// What is left on screen after the panel gets out of the way.
+#[derive(Debug, PartialEq, Eq)]
+enum Aside {
+    /// Left exactly as it was.
+    Stay,
+    Bar,
+    Gone,
+}
+
+/// Leaves the screen to whatever the user asked to look at.
+fn step_aside(state: &Arc<AppState>) {
+    if stepping_aside(state.settings().keep_open) == Aside::Bar {
         ui::show_pill(state.app());
+    }
+}
+
+/// The bar, never nothing — and nothing at all while the list is meant to
+/// stay open.
+///
+/// Being sent to another window is not a wish for the app to leave, and the
+/// bar is where it rests anyway once a queue drains, so disappearing here put
+/// the app somewhere its own idle state never does and took a global shortcut
+/// to get back from.
+///
+/// "Keep the list open" has to beat every collapse the app decides on by
+/// itself, and this is one: the jump was asked for, the collapse was not.
+/// Someone who has asked for the list to stay has already accepted it
+/// covering part of the screen. Three separate paths have had to learn this —
+/// the queue draining, the hover watch, and now here — so anything new that
+/// collapses on the app's own initiative belongs in this list.
+fn stepping_aside(keep_open: bool) -> Aside {
+    if keep_open {
+        Aside::Stay
+    } else {
+        Aside::Bar
+    }
+}
+
+/// Escape is the one place that may take the app off the screen, and only
+/// with nothing queued: rows left behind an invisible window are rows nobody
+/// is going to answer.
+fn on_escape(queued: usize) -> Aside {
+    if queued == 0 {
+        Aside::Gone
+    } else {
+        Aside::Bar
     }
 }
 
@@ -456,9 +505,7 @@ fn list_windows() -> Vec<switcher::WindowEntry> {
 #[tauri::command]
 fn focus_window(state: Shared, handle: isize) -> Result<(), String> {
     switcher::focus(handle)?;
-    if let Some(window) = ui::panel(state.app()) {
-        let _ = window.hide();
-    }
+    step_aside(&state);
     Ok(())
 }
 
@@ -1005,6 +1052,31 @@ mod tests {
     fn asking_for_the_panel_outright_always_opens_it() {
         assert!(hover_may_open(false, true));
         assert!(hover_may_open(false, false));
+    }
+
+    /// The third path to need this: the queue draining and the hover watch
+    /// came first. A jump is asked for; the collapse that followed was not.
+    #[test]
+    fn keeping_the_list_open_survives_a_jump_to_another_window() {
+        assert_eq!(stepping_aside(true), Aside::Stay);
+    }
+
+    #[test]
+    fn a_jump_otherwise_leaves_the_bar() {
+        assert_eq!(stepping_aside(false), Aside::Bar);
+    }
+
+    /// Rows behind an invisible window are rows nobody is going to answer.
+    #[test]
+    fn escape_leaves_the_bar_while_rows_remain() {
+        assert_eq!(on_escape(1), Aside::Bar);
+        assert_eq!(on_escape(7), Aside::Bar);
+    }
+
+    /// Asking for it gone is the one wish allowed to empty the screen.
+    #[test]
+    fn escape_takes_it_off_the_screen_with_nothing_queued() {
+        assert_eq!(on_escape(0), Aside::Gone);
     }
 
     /// The whole point of the change: a session whose window cannot be found

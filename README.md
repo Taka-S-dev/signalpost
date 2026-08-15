@@ -197,10 +197,14 @@ second is a seizure risk, and this window sits above everything, so it cannot
 be looked away from. The cycle stays at roughly two seconds either way.
 
 "Keep the list open" is also on the right-click menu, since deciding you want
-the panel to stay is something you do while looking at the bar. While it is on,
-pointing at the bar no longer opens it — the peek's other half is switched off,
-so a collapse you asked for would otherwise end the moment the pointer went
-near. Click the bar to open it.
+the panel to stay is something you do while looking at the bar. It beats every
+collapse the app would make on its own — the queue draining, the pointer
+leaving, jumping to another window — leaving `Esc` and `C` as the ways to put
+it away, because those are asked for.
+
+While it is on, pointing at the bar no longer opens it: the peek's other half
+is switched off, so a collapse you asked for would otherwise end the moment
+the pointer went near. Click the bar to open it.
 
 ### Language
 
