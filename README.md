@@ -97,7 +97,8 @@ Neither build is signed, so SmartScreen shows *"Windows protected your PC"* on
 first run — **More info**, then **Run anyway**. Building from source instead is
 two commands, under *Development* below.
 
-1. Run the app — it lives in the tray.
+1. Run the app. It shows the bar, so you can see it started; the tray icon
+   is hidden in the Windows 11 overflow by default and says nothing.
 2. The **Settings** screen opens on first run. Press **Install hooks**.
    They are merged into `~/.claude/settings.json`, keeping your existing
    settings and writing a `.bak` first.

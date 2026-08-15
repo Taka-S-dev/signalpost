@@ -228,6 +228,18 @@ fn stepping_aside(keep_open: bool) -> Aside {
     }
 }
 
+/// What is on screen the moment the app starts.
+///
+/// Never nothing: the tray icon is hidden by default on Windows 11, so an app
+/// that starts into it alone gives no sign that it is running at all.
+fn on_start(keep_open: bool) -> Aside {
+    if keep_open {
+        Aside::Stay
+    } else {
+        Aside::Bar
+    }
+}
+
 /// Escape is the one place that may take the app off the screen, and only
 /// with nothing queued: rows left behind an invisible window are rows nobody
 /// is going to answer.
@@ -630,9 +642,13 @@ pub fn run() {
                 ui::place(&handle, &window);
             }
             // Asking for the list to stay open means it should be open now,
-            // not from the next arrival onwards.
-            if shared.settings().keep_open {
-                ui::expand(&handle);
+            // not from the next arrival onwards. Otherwise the bar, which is
+            // where the app rests anyway: starting into the tray alone left
+            // no way to tell it had started, and the tray icon is hidden in
+            // the Windows 11 overflow by default.
+            match on_start(shared.settings().keep_open) {
+                Aside::Stay => ui::expand(&handle),
+                _ => ui::show_pill(&handle),
             }
 
             tauri::async_runtime::spawn(async move {
@@ -1070,6 +1086,14 @@ mod tests {
     #[test]
     fn a_jump_otherwise_leaves_the_bar() {
         assert_eq!(stepping_aside(false), Aside::Bar);
+    }
+
+    /// The tray icon is hidden by default on Windows 11, so starting into it
+    /// alone gives no sign the app is running.
+    #[test]
+    fn starting_up_puts_something_on_screen() {
+        assert_eq!(on_start(false), Aside::Bar);
+        assert_eq!(on_start(true), Aside::Stay);
     }
 
     /// Rows behind an invisible window are rows nobody is going to answer.
