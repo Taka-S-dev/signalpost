@@ -404,21 +404,14 @@ body {
   line-height: 1;
 }
 
-/* Below this width the labels stop fitting. The icon carries the tab on its
-   own; the shortcut chip goes with the label, because a row reading
-   "W P R S" names nothing and looked like the panel had lost its labels. */
-@media (max-width: 400px) {
-  .titlebar nav button .label,
-  .titlebar nav button kbd {
-    display: none;
-  }
-}
-
-/* With labels, the icon would only repeat what the word already says. */
-@media (min-width: 401px) {
-  .nav-icon {
-    display: none;
-  }
+/* Icons whatever the width. The words used to appear once the panel was
+   dragged past 400px, so widening the list to read it swapped the header for
+   a different one — five buttons that had been shapes became five words, in a
+   bar whose job is to be glanced at. The tab's name is on its tooltip along
+   with its key, and `?` lists them all. */
+.titlebar nav button .label,
+.titlebar nav button kbd {
+  display: none;
 }
 
 /* List -------------------------------------------------------------------- */
