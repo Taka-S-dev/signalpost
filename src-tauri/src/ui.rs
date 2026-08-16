@@ -248,7 +248,7 @@ pub fn sync(app: &AppHandle, items: &[Item], arrived: Option<ItemKind>) {
         .filter(|i| i.kind != ItemKind::Completed)
         .count();
 
-    badge_tray(app, pending, items.len() - pending);
+    paint_tray(app, pending, items.len() - pending);
 
     if let Some(tray) = app.tray_by_id(crate::TRAY_ID) {
         let strings = app
@@ -429,22 +429,44 @@ fn on_a_monitor(window: &WebviewWindow) -> bool {
     })
 }
 
-/// Marks the tray icon with a dot for what is waiting.
+/// The two colours the icon is drawn in, which is what the tray recolours.
+const POSTBOX: [u8; 3] = [224, 62, 58];
+const BOLT: [u8; 3] = [246, 202, 62];
+/// Nothing waiting: the same shape with the colour taken out of it.
+const IDLE_POSTBOX: [u8; 3] = [108, 112, 120];
+const IDLE_BOLT: [u8; 3] = [158, 163, 172];
+/// Something arrived that cannot be answered here.
+const NEWS_BOLT: [u8; 3] = [122, 162, 247];
+
+/// What the tray icon should be painted in, as (postbox, bolt).
+///
+/// Blocked calls leave it in its own colours, because that is the state the
+/// icon was designed for; anything less loud is a departure from it.
+fn tray_paint(pending: usize, info: usize) -> ([u8; 3], [u8; 3]) {
+    match (pending, info) {
+        (0, 0) => (IDLE_POSTBOX, IDLE_BOLT),
+        (0, _) => (POSTBOX, NEWS_BOLT),
+        _ => (POSTBOX, BOLT),
+    }
+}
+
+/// Recolours the icon for what is waiting.
 ///
 /// A toast and a sound both pass: if you were looking elsewhere, they are
 /// gone. The tray is the only thing on screen the whole time, so it is the
 /// only place a signal can wait for you to notice it.
-fn badge_tray(app: &AppHandle, pending: usize, info: usize) {
-    // Amber reads as "something is blocked on you"; blue as "there is news".
-    let dot = match (pending, info) {
-        (0, 0) => None,
-        (0, _) => Some([122u8, 162, 247, 255]),
-        _ => Some([232u8, 192, 125, 255]),
-    };
+///
+/// A dot in the corner used to carry this. The artwork now reaches the edges
+/// of the tile, so the dot landed on the postbox and took the slot with it —
+/// at 16px the icon became a disc with fragments around it. Recolouring keeps
+/// the silhouette and changes the two largest areas instead, which is also
+/// the more visible of the two once the icon is that small.
+fn paint_tray(app: &AppHandle, pending: usize, info: usize) {
+    let paint = tray_paint(pending, info);
 
     // Repainting on every event would be wasted work; only a change matters.
     if let Some(state) = app.try_state::<Arc<AppState>>() {
-        if !state.tray_badge_changed(dot) {
+        if !state.tray_paint_changed(paint) {
             return;
         }
     }
@@ -455,43 +477,38 @@ fn badge_tray(app: &AppHandle, pending: usize, info: usize) {
     let Some(base) = app.default_window_icon() else {
         return;
     };
-    match dot {
-        None => {
-            let _ = tray.set_icon(Some(base.clone()));
-        }
-        Some(color) => {
-            let (w, h) = (base.width(), base.height());
-            let mut rgba = base.rgba().to_vec();
-            draw_dot(&mut rgba, w, h, color);
-            let _ = tray.set_icon(Some(tauri::image::Image::new_owned(rgba, w, h)));
-        }
-    }
+    let (w, h) = (base.width(), base.height());
+    let mut rgba = base.rgba().to_vec();
+    recolour(&mut rgba, paint.0, paint.1);
+    let _ = tray.set_icon(Some(tauri::image::Image::new_owned(rgba, w, h)));
 }
 
-/// Fills a circle in the lower-right corner, ringed in near-black so it stays
-/// legible on both light and dark taskbars.
-fn draw_dot(rgba: &mut [u8], width: u32, height: u32, color: [u8; 4]) {
-    let radius = (width.min(height) as f32) * 0.30;
-    let cx = width as f32 - radius - 1.0;
-    let cy = height as f32 - radius - 1.0;
-    let ring = radius * 0.78;
+/// Substitutes both fill colours, leaving the shape and its edges alone.
+///
+/// Each pixel goes to whichever of the two it already resembles, so the
+/// blended pixels where the bolt meets the postbox pick a side rather than
+/// turning into a third colour. Alpha is untouched, which is what keeps the
+/// antialiased outline.
+fn recolour(rgba: &mut [u8], postbox: [u8; 3], bolt: [u8; 3]) {
+    fn distance(pixel: &[u8], to: [u8; 3]) -> i32 {
+        (0..3)
+            .map(|i| {
+                let d = pixel[i] as i32 - to[i] as i32;
+                d * d
+            })
+            .sum()
+    }
 
-    for y in 0..height {
-        for x in 0..width {
-            let dx = x as f32 + 0.5 - cx;
-            let dy = y as f32 + 0.5 - cy;
-            let distance = (dx * dx + dy * dy).sqrt();
-            if distance > radius {
-                continue;
-            }
-            let pixel = ((y * width + x) * 4) as usize;
-            let paint = if distance > ring {
-                [10, 12, 16, 255]
-            } else {
-                color
-            };
-            rgba[pixel..pixel + 4].copy_from_slice(&paint);
+    for pixel in rgba.chunks_exact_mut(4) {
+        if pixel[3] == 0 {
+            continue;
         }
+        let target = if distance(pixel, POSTBOX) <= distance(pixel, BOLT) {
+            postbox
+        } else {
+            bolt
+        };
+        pixel[..3].copy_from_slice(&target);
     }
 }
 
@@ -640,7 +657,10 @@ pub fn run_open_command(command_line: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{size_after_scale_change, PILL_HEIGHT, PILL_WIDTH};
+    use super::{
+        recolour, size_after_scale_change, tray_paint, BOLT, IDLE_BOLT, IDLE_POSTBOX, NEWS_BOLT,
+        PILL_HEIGHT, PILL_WIDTH, POSTBOX,
+    };
 
     /// The bar is drawn with a 999px radius, so a window left at the panel's
     /// height came out as an oval with a single row floating in it.
@@ -665,5 +685,43 @@ mod tests {
     #[test]
     fn an_unplaced_panel_is_left_where_it_is() {
         assert_eq!(size_after_scale_change(false, None), None);
+    }
+
+    #[test]
+    fn an_empty_inbox_takes_the_colour_out_of_the_tray_icon() {
+        assert_eq!(tray_paint(0, 0), (IDLE_POSTBOX, IDLE_BOLT));
+    }
+
+    #[test]
+    fn news_alone_is_shown_without_the_colour_that_means_you_are_blocking() {
+        assert_eq!(tray_paint(0, 3), (POSTBOX, NEWS_BOLT));
+    }
+
+    /// A blocked call outranks anything else in the list, so the icon is left
+    /// in the colours it was drawn in rather than mixed with the news state.
+    #[test]
+    fn a_blocked_call_leaves_the_icon_in_its_own_colours() {
+        assert_eq!(tray_paint(1, 5), (POSTBOX, BOLT));
+    }
+
+    #[test]
+    fn recolouring_swaps_both_fills_and_keeps_the_outline() {
+        // Postbox, bolt, a blend of the two, and a transparent pixel.
+        let mut rgba = vec![
+            POSTBOX[0], POSTBOX[1], POSTBOX[2], 255, //
+            BOLT[0], BOLT[1], BOLT[2], 255, //
+            240, 130, 60, 255, //
+            9, 9, 9, 0,
+        ];
+        recolour(&mut rgba, [1, 2, 3], [4, 5, 6]);
+
+        assert_eq!(&rgba[0..4], &[1, 2, 3, 255]);
+        assert_eq!(&rgba[4..8], &[4, 5, 6, 255]);
+        // The blend sits nearer the postbox, so it joins it instead of
+        // becoming a third colour along the boundary.
+        assert_eq!(&rgba[8..12], &[1, 2, 3, 255]);
+        // Nothing outside the shape is painted, which is what keeps the
+        // antialiased edge from turning into a square.
+        assert_eq!(&rgba[12..16], &[9, 9, 9, 0]);
     }
 }

@@ -88,7 +88,7 @@ pub struct AppState {
     risk: Mutex<RiskRules>,
     tray_strings: Mutex<crate::ui::TrayStrings>,
     snooze_until: Mutex<u64>,
-    tray_badge: Mutex<Option<[u8; 4]>>,
+    tray_paint: Mutex<Option<([u8; 3], [u8; 3])>>,
     pill: Mutex<bool>,
     peeking: Mutex<bool>,
     active_shortcut: Mutex<Option<String>>,
@@ -172,7 +172,7 @@ impl AppState {
             tray_strings: Mutex::new(crate::ui::TrayStrings::default()),
             snooze_until: Mutex::new(0),
             // None means "not drawn yet", so the first sync always paints.
-            tray_badge: Mutex::new(Some([0, 0, 0, 0])),
+            tray_paint: Mutex::new(None),
             pill: Mutex::new(false),
             peeking: Mutex::new(false),
             active_shortcut: Mutex::new(None),
@@ -292,12 +292,12 @@ impl AppState {
 
     /// True when the tray badge differs from what is already drawn, so the
     /// icon is only rebuilt when it would actually look different.
-    pub fn tray_badge_changed(&self, dot: Option<[u8; 4]>) -> bool {
-        let mut current = self.tray_badge.lock().unwrap();
-        if *current == dot {
+    pub fn tray_paint_changed(&self, paint: ([u8; 3], [u8; 3])) -> bool {
+        let mut current = self.tray_paint.lock().unwrap();
+        if *current == Some(paint) {
             return false;
         }
-        *current = dot;
+        *current = Some(paint);
         true
     }
 
