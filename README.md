@@ -181,6 +181,7 @@ that decides what is safe. Read the command.
 
 | Setting | What it does | Default |
 | --- | --- | --- |
+| Open the list by itself | Approvals only, anything, or never. The bar appears either way | approvals only |
 | Sound | A different cue per row type | on |
 | Flash | Amber on arrival, green when the last row clears | on |
 | Hide when empty | Collapse the panel at zero rows | off |
