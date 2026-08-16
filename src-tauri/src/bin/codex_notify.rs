@@ -108,7 +108,21 @@ fn main() {
         if let Some(body) = json {
             args.push(body);
         }
-        let _ = std::process::Command::new(program).args(args).status();
+        let mut command = std::process::Command::new(program);
+        command.args(args);
+
+        // This binary has no console of its own, so Windows hands a console
+        // child a brand new window. Codex runs notify at the end of every
+        // turn, so that is a black rectangle blinking over whatever the user
+        // is doing, several times an hour.
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+            command.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let _ = command.status();
     }
 }
 
