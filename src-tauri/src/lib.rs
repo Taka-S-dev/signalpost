@@ -675,12 +675,11 @@ pub fn run() {
             // resize the panel. Those intermediate sizes are measured against
             // a scale factor mid-change, and saving one shrinks the panel.
             tauri::WindowEvent::ScaleFactorChanged { .. } => {
-                if let Some(state) = window.app_handle().try_state::<Arc<AppState>>() {
+                let app = window.app_handle();
+                if let Some(state) = app.try_state::<Arc<AppState>>() {
                     state.suppress_geometry_saves(1200);
-                    if let Some(saved) = state.geometry() {
-                        let _ = window.set_size(tauri::LogicalSize::new(saved.width, saved.height));
-                    }
                 }
+                ui::restore_size_after_scale_change(app);
             }
             _ => {}
         })

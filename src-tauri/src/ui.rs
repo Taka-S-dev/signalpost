@@ -301,6 +301,37 @@ pub fn sync(app: &AppHandle, items: &[Item], arrived: Option<ItemKind>) {
     }
 }
 
+/// Puts the window back to the size it should be after Windows has resized it.
+///
+/// Crossing to a monitor with different scaling makes Windows resize the
+/// window, and the sizes it passes through are measured against a scale
+/// factor mid-change. Restoring the remembered one is right for the panel and
+/// wrong for the bar: the bar was left at the panel's width and height with a
+/// single row inside it, and since it is drawn with a 999px radius, a tall
+/// window came out as an oval.
+pub fn restore_size_after_scale_change(app: &AppHandle) {
+    let Some(window) = panel(app) else { return };
+    let pill = app
+        .try_state::<Arc<AppState>>()
+        .map(|s| s.is_pill())
+        .unwrap_or(false);
+    let saved = app.try_state::<Arc<AppState>>().and_then(|s| s.geometry());
+
+    if let Some((width, height)) = size_after_scale_change(pill, saved.map(|g| (g.width, g.height)))
+    {
+        resize(&window, width, height);
+    }
+}
+
+/// The bar's own size while collapsed, the remembered one otherwise.
+fn size_after_scale_change(pill: bool, saved: Option<(f64, f64)>) -> Option<(f64, f64)> {
+    if pill {
+        Some((PILL_WIDTH, PILL_HEIGHT))
+    } else {
+        saved
+    }
+}
+
 /// Restores where the user put the panel, or docks it if they never have.
 ///
 /// A remembered position can end up off every monitor — a display gets
@@ -604,5 +635,35 @@ pub fn run_open_command(command_line: &str) -> Result<(), String> {
             }
             _ => return Ok(()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{size_after_scale_change, PILL_HEIGHT, PILL_WIDTH};
+
+    /// The bar is drawn with a 999px radius, so a window left at the panel's
+    /// height came out as an oval with a single row floating in it.
+    #[test]
+    fn a_collapsed_bar_goes_back_to_the_bar_not_the_panel() {
+        assert_eq!(
+            size_after_scale_change(true, Some((400.0, 620.0))),
+            Some((PILL_WIDTH, PILL_HEIGHT))
+        );
+    }
+
+    #[test]
+    fn the_panel_goes_back_to_what_was_remembered() {
+        assert_eq!(
+            size_after_scale_change(false, Some((500.0, 775.0))),
+            Some((500.0, 775.0))
+        );
+    }
+
+    /// Nothing remembered means nothing to restore. Leaving the window alone
+    /// beats inventing a size out of a scale factor that is mid-change.
+    #[test]
+    fn an_unplaced_panel_is_left_where_it_is() {
+        assert_eq!(size_after_scale_change(false, None), None);
     }
 }
