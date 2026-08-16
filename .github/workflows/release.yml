@@ -48,6 +48,26 @@ jobs:
       - name: Build the installer
         run: npm run tauri build
 
+      # Built without the Tauri CLI, the app points its webview at the dev
+      # server instead of carrying the pages itself. It compiles, it starts,
+      # and it shows a connection error where the panel should be — so the
+      # only way to tell the two apart is to look for the page's script
+      # inside the executable.
+      - name: Check the app carries its frontend
+        shell: pwsh
+        run: |
+          $asset = ([regex]'assets/([A-Za-z0-9._-]+\.js)').Match((Get-Content dist/index.html -Raw)).Groups[1].Value
+          if (-not $asset) { throw "no script tag in dist/index.html to look for" }
+          # Resolved to a full path: .NET reads relative paths from the
+          # process directory, which is not the one Set-Location moved to, and
+          # a read of the wrong path here would report a pass.
+          $exe = (Resolve-Path "src-tauri/target/release/signalpost.exe").Path
+          $text = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($exe))
+          if (-not $text.Contains($asset)) {
+            throw "$exe does not carry $asset; it would open the dev server instead of the panel"
+          }
+          "$exe carries $asset"
+
       # Both binaries, because the app looks for the Codex shim beside itself,
       # and the marker, because that is what makes the copy portable.
       - name: Assemble the portable build
