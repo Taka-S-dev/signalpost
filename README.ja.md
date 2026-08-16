@@ -1,4 +1,4 @@
-# Signalpost
+# <img src="docs/images/icon.png" width="44" align="absmiddle" alt="郵便ポストの投函口に雷が落ちている。"> Signalpost
 
 [![CI](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml/badge.svg)](https://github.com/Taka-S-dev/signalpost/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Taka-S-dev/signalpost)](https://github.com/Taka-S-dev/signalpost/releases/latest)
