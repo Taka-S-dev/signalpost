@@ -508,7 +508,7 @@ fn recolour(rgba: &mut [u8], postbox: [u8; 3], bolt: [u8; 3]) {
             .sum()
     }
 
-    for pixel in rgba.chunks_exact_mut(4) {
+    for pixel in rgba.as_chunks_mut::<4>().0 {
         if pixel[3] == 0 {
             continue;
         }
