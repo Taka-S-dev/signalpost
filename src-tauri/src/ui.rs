@@ -129,6 +129,15 @@ fn button_held() -> bool {
     false
 }
 
+/// Whether the pointer is over the panel right now.
+///
+/// Exposed so the hover-to-open wait can be settled the same way the
+/// hover-to-close watch is: against the OS cursor, which a tooltip cannot
+/// confuse.
+pub fn pointer_over_panel(app: &AppHandle) -> Option<bool> {
+    pointer_inside(&panel(app)?)
+}
+
 fn pointer_inside(window: &WebviewWindow) -> Option<bool> {
     if button_held() {
         return Some(true);

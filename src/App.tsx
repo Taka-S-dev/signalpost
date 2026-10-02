@@ -289,8 +289,10 @@ export default function App() {
 
   const peek = useCallback(() => {
     cancelPeek();
-    // Long enough that a cursor merely crossing the bar does not open it.
-    hoverTimer.current = window.setTimeout(() => void api.expandPanel(true), 350);
+    // Long enough to be a deliberate rest rather than a pointer on its way
+    // past. 350ms was short enough that crossing the bar at a normal speed
+    // opened it.
+    hoverTimer.current = window.setTimeout(() => void api.expandPanel(true), 600);
   }, [cancelPeek]);
 
   // Typing is the one case where it must not close on its own. Clicking

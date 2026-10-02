@@ -260,11 +260,28 @@ fn expand_panel(state: Shared, peek: Option<bool>) {
     if !hover_may_open(peek, state.settings().keep_open) {
         return;
     }
+    // The hover waits before opening, and in that time the pointer can be
+    // long gone. Asked here rather than cancelled from a DOM leave event for
+    // the reason in the doc comment above: a native tooltip opening over the
+    // bar looks exactly like the pointer leaving, and cancelling on that
+    // would mean a rested pointer never opened the panel at all.
+    if !still_pointed_at(peek, ui::pointer_over_panel(state.app())) {
+        return;
+    }
     state.set_peeking(peek);
     ui::reveal(state.app());
     if peek {
         ui::watch_peek(state.app());
     }
+}
+
+/// Whether a hover that has finished waiting should still open the panel.
+///
+/// Only a pointer known to have left calls it off; when the position cannot
+/// be read the hover is honoured, since the alternative is a bar that stops
+/// opening on machines where the query fails.
+fn still_pointed_at(peek: bool, inside: Option<bool>) -> bool {
+    !peek || inside != Some(false)
 }
 
 /// Whether a request to open the panel should be honoured.
@@ -1073,6 +1090,30 @@ mod tests {
     fn asking_for_the_panel_outright_always_opens_it() {
         assert!(hover_may_open(false, true));
         assert!(hover_may_open(false, false));
+    }
+
+    #[test]
+    fn a_hover_that_moved_on_while_it_waited_does_not_open_the_panel() {
+        assert!(!still_pointed_at(true, Some(false)));
+    }
+
+    #[test]
+    fn a_hover_that_stayed_opens_the_panel() {
+        assert!(still_pointed_at(true, Some(true)));
+    }
+
+    /// An unreadable cursor counting as a departure would stop the bar
+    /// opening at all, which is worse than opening once too often.
+    #[test]
+    fn a_cursor_that_cannot_be_read_still_opens_the_panel() {
+        assert!(still_pointed_at(true, None));
+    }
+
+    /// A click is not a hover: it asks for the panel whatever the pointer did
+    /// between the press and the call arriving.
+    #[test]
+    fn a_click_opens_the_panel_wherever_the_pointer_ended_up() {
+        assert!(still_pointed_at(false, Some(false)));
     }
 
     /// The third path to need this: the queue draining and the hover watch

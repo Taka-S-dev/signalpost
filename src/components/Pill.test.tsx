@@ -32,10 +32,10 @@ function row(kind: Item["kind"], project: string): Item {
   } as unknown as Item;
 }
 
-function show(items: Item[]) {
+function show(items: Item[], onPeek = () => {}, onCancelPeek = () => {}) {
   const { container } = render(
     <I18nContext.Provider value={t}>
-      <Pill items={items} onPeek={() => {}} onCancelPeek={() => {}} />
+      <Pill items={items} onPeek={onPeek} onCancelPeek={onCancelPeek} />
     </I18nContext.Provider>,
   );
   return { container, q: within(container) };
