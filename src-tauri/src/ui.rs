@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Monitor, WebviewWindow};
 
 use crate::model::{Item, ItemKind};
 use crate::settings::PopupWhen;
@@ -572,6 +572,61 @@ fn dock(window: &WebviewWindow) {
     let Ok(Some(monitor)) = window.current_monitor() else {
         return;
     };
+    dock_onto(window, &monitor);
+}
+
+/// The size a reset should restore: the one belonging to the shape on
+/// screen.
+///
+/// Resetting always restored the panel's size, so doing it while collapsed
+/// inflated the window to four times the bar's height. The bar is drawn at
+/// the top-left of its window, so it landed well away from where the dock
+/// had just put the window's edge, and the reset looked like it had moved it
+/// somewhere arbitrary.
+pub fn reset_size(pill: bool) -> (f64, f64) {
+    if pill {
+        (PILL_WIDTH, PILL_HEIGHT)
+    } else {
+        (DEFAULT_WIDTH, DEFAULT_HEIGHT)
+    }
+}
+
+/// Puts the panel on the monitor the pointer is on.
+///
+/// What "reset the position" means to the person pressing it is "put it back
+/// on the screen I am looking at", and the menu item was just clicked there.
+/// Docking to the monitor the window is already on cannot do that: a panel
+/// stranded on a display nobody is in front of — a remote session's virtual
+/// monitor left behind in the layout — gets docked neatly to that same
+/// invisible display, and the menu item looks like it does nothing.
+pub fn dock_where_the_pointer_is(app: &AppHandle, window: &WebviewWindow) {
+    // The move is the app's, not a placement the user chose.
+    if let Some(state) = app.try_state::<Arc<AppState>>() {
+        state.suppress_geometry_saves(600);
+    }
+    let pointer = window
+        .cursor_position()
+        .ok()
+        .and_then(|at| window.monitor_from_point(at.x, at.y).ok().flatten());
+    let monitor = recovery_monitor(
+        pointer,
+        window.primary_monitor().ok().flatten(),
+        window.current_monitor().ok().flatten(),
+    );
+    let Some(monitor) = monitor else { return };
+    dock_onto(window, &monitor);
+}
+
+/// Which monitor a reset should land on, in order of what it tells us.
+///
+/// The pointer is the only one that says where the user is; the primary is
+/// where the taskbar is, so it is the better guess than the window's own
+/// monitor, which is the one we are trying to get away from.
+fn recovery_monitor<T>(pointer: Option<T>, primary: Option<T>, current: Option<T>) -> Option<T> {
+    pointer.or(primary).or(current)
+}
+
+fn dock_onto(window: &WebviewWindow, monitor: &Monitor) {
     let scale = monitor.scale_factor();
     // Same reason as the clamp: the taskbar is not usable space.
     let work = monitor.work_area();
@@ -667,8 +722,8 @@ pub fn run_open_command(command_line: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        recolour, size_after_scale_change, tray_paint, BOLT, IDLE_BOLT, IDLE_POSTBOX, NEWS_BOLT,
-        PILL_HEIGHT, PILL_WIDTH, POSTBOX,
+        recolour, recovery_monitor, reset_size, size_after_scale_change, tray_paint, BOLT,
+        IDLE_BOLT, IDLE_POSTBOX, NEWS_BOLT, PILL_HEIGHT, PILL_WIDTH, POSTBOX,
     };
 
     /// The bar is drawn with a 999px radius, so a window left at the panel's
@@ -694,6 +749,43 @@ mod tests {
     #[test]
     fn an_unplaced_panel_is_left_where_it_is() {
         assert_eq!(size_after_scale_change(false, None), None);
+    }
+
+    #[test]
+    fn resetting_the_bar_keeps_it_the_size_of_a_bar() {
+        assert_eq!(reset_size(true), (PILL_WIDTH, PILL_HEIGHT));
+    }
+
+    #[test]
+    fn resetting_the_panel_restores_the_panel_s_size() {
+        assert_eq!(
+            reset_size(false),
+            (crate::state::DEFAULT_WIDTH, crate::state::DEFAULT_HEIGHT)
+        );
+    }
+
+    /// The pointer is where the person pressing the menu item is looking.
+    #[test]
+    fn a_reset_lands_on_the_monitor_under_the_pointer() {
+        assert_eq!(
+            recovery_monitor(Some("pointer"), Some("primary"), Some("stranded")),
+            Some("pointer")
+        );
+    }
+
+    #[test]
+    fn with_no_pointer_reading_a_reset_lands_on_the_primary() {
+        assert_eq!(
+            recovery_monitor(None, Some("primary"), Some("stranded")),
+            Some("primary")
+        );
+    }
+
+    /// The window's own monitor is the last resort, because it is the one the
+    /// reset is trying to get away from.
+    #[test]
+    fn the_window_s_own_monitor_is_only_a_last_resort() {
+        assert_eq!(recovery_monitor(None, None, Some("stranded")), Some("stranded"));
     }
 
     #[test]

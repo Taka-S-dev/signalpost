@@ -493,11 +493,9 @@ fn quit_app(app: tauri::AppHandle) {
 fn reset_panel_position(state: Shared) {
     state.reset_geometry();
     if let Some(window) = ui::panel(state.app()) {
-        let _ = window.set_size(tauri::LogicalSize::new(
-            state::DEFAULT_WIDTH,
-            state::DEFAULT_HEIGHT,
-        ));
-        ui::place(state.app(), &window);
+        let (width, height) = ui::reset_size(state.is_pill());
+        let _ = window.set_size(tauri::LogicalSize::new(width, height));
+        ui::dock_where_the_pointer_is(state.app(), &window);
         let _ = window.show();
         let _ = window.set_focus();
     }
