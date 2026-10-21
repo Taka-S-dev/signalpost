@@ -216,7 +216,12 @@ body {
   background: var(--line);
 }
 
+/* The part that gives way. Everything else in the bar is a fixed shape or a
+   number that has to stay whole, so the name is what shortens when the bar
+   runs out of room. */
 .pill-label {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -305,11 +310,14 @@ body {
   opacity: 0.75;
 }
 
+/* Never wrapped, never stretched. Japanese breaks between characters, so a
+   wait long enough to read "22時間13分" was laid out as a column and spilled
+   out of the bar, down the screen. */
 .pill-age {
-  flex: 1;
+  flex: none;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-size: var(--text-sm);
-  text-align: right;
   color: var(--text-dim);
 }
 
