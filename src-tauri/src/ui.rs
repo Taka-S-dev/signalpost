@@ -788,7 +788,10 @@ mod tests {
     /// reset is trying to get away from.
     #[test]
     fn the_window_s_own_monitor_is_only_a_last_resort() {
-        assert_eq!(recovery_monitor(None, None, Some("stranded")), Some("stranded"));
+        assert_eq!(
+            recovery_monitor(None, None, Some("stranded")),
+            Some("stranded")
+        );
     }
 
     #[test]
