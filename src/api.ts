@@ -114,6 +114,7 @@ export interface TrayStrings {
   snooze: string;
   unsnooze: string;
   reset: string;
+  restart: string;
   quit: string;
   idle: string;
   pending: string;

@@ -817,6 +817,9 @@ fn handle_menu(app: &tauri::AppHandle, id: &str) {
                 reset_panel_position(state);
             }
         }
+        // Everything parked is released as "no decision" on the way out, so
+        // the editor asks again rather than the session hanging.
+        "restart" => app.restart(),
         "quit" => app.exit(0),
         _ => {}
     }
@@ -859,8 +862,9 @@ fn tray_menu(app: &tauri::AppHandle, strings: &ui::TrayStrings) -> tauri::Result
     )?;
     let snooze = MenuItem::with_id(app, "snooze", snooze_label, true, None::<&str>)?;
     let reset = MenuItem::with_id(app, "reset", &strings.reset, true, None::<&str>)?;
+    let restart = MenuItem::with_id(app, "restart", &strings.restart, true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", &strings.quit, true, None::<&str>)?;
-    Menu::with_items(app, &[&mode, &keep_open, &snooze, &reset, &quit])
+    Menu::with_items(app, &[&mode, &keep_open, &snooze, &reset, &restart, &quit])
 }
 
 /// True only when the panel is on screen at full size. A hidden window is not

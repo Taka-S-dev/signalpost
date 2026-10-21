@@ -218,6 +218,8 @@ pub struct TrayStrings {
     /// The way back when the panel has ended up somewhere invisible — the
     /// in-panel reset button is unreachable exactly when it is needed.
     pub reset: String,
+    /// The blunt way back when resetting the position has not worked.
+    pub restart: String,
     pub quit: String,
     pub idle: String,
     /// Contains `{n}`, replaced with the number of blocked calls.
@@ -233,6 +235,7 @@ impl Default for TrayStrings {
             snooze: "Stop popping up (30 min)".into(),
             unsnooze: "Pop up again".into(),
             reset: "Reset position".into(),
+            restart: "Restart".into(),
             quit: "Quit".into(),
             idle: "Signalpost — nothing waiting".into(),
             pending: "Signalpost — {n} waiting".into(),

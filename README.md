@@ -130,9 +130,9 @@ keystroke away from answering it once — tick the checkbox on the row instead.
 
 Right-clicking the panel or the bar opens the same menu the tray icon has:
 switch between the panel and the bar, keep the list open, stop the popups for
-thirty minutes, reset the position, quit. It is there because the tray icon is
-hidden in the Windows 11 overflow by default, so the bar is what you can
-actually reach. Text selection still copies with `Ctrl+C`.
+thirty minutes, reset the position, restart, quit. It is there because the
+tray icon is hidden in the Windows 11 overflow by default, so the bar is what
+you can actually reach. Text selection still copies with `Ctrl+C`.
 
 ### Ordering
 

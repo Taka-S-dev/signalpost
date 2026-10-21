@@ -235,6 +235,7 @@ export const en = {
     snooze: "Stop popping up (30 min)",
     unsnooze: "Pop up again",
     reset: "Reset position",
+    restart: "Restart",
     quit: "Quit",
     idle: "Signalpost — nothing waiting",
     pending: "Signalpost — {n} waiting",

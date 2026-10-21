@@ -227,6 +227,7 @@ export const ja: Dictionary = {
     snooze: "30分ポップアップしない",
     unsnooze: "ポップアップを再開",
     reset: "位置をリセット",
+    restart: "再起動",
     quit: "終了",
     idle: "Signalpost — 待ちなし",
     pending: "Signalpost — {n} 件の承認待ち",
